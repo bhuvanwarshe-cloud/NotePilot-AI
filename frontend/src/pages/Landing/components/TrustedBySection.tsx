@@ -9,10 +9,10 @@ const stats = [
 
 export function TrustedBySection() {
   return (
-    <section className="relative overflow-hidden" style={{ borderTop: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+    <section className="relative overflow-hidden" style={{ borderTop: '1px solid var(--np-border)', borderBottom: '1px solid var(--np-border)' }}>
       <div
         className="absolute inset-0 -z-10"
-        style={{ background: 'rgba(255,255,255,0.015)' }}
+        style={{ background: 'var(--np-bg-secondary)' }}
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -21,7 +21,7 @@ export function TrustedBySection() {
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           className="text-center text-xs font-semibold uppercase tracking-[0.2em] mb-10"
-          style={{ color: 'rgba(255,255,255,0.25)' }}
+          style={{ color: 'var(--np-text-muted)' }}
         >
           Trusted by students at 500+ universities worldwide
         </motion.p>
@@ -51,7 +51,7 @@ export function TrustedBySection() {
               >
                 {stat.value}
               </div>
-              <div className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.4)' }}>
+              <div className="text-sm font-medium" style={{ color: 'var(--np-text-secondary)' }}>
                 {stat.label}
               </div>
             </motion.div>

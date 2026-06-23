@@ -1,61 +1,190 @@
 @import "tailwindcss";
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
 
+/* ═══════════════════════════════════════════════════════════
+   THEME TOKENS  —  applied via html.dark / html.light classes
+   All components read these variables; never hardcode colors.
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Dark Theme (default) ─────────────────────────────────── */
+html, html.dark {
+  /* Backgrounds */
+  --np-bg-primary:        #0B0F19;
+  --np-bg-secondary:      #111827;
+  --np-surface:           #1A2236;
+  --np-surface-raised:    #1F2A3F;
+  --np-surface-overlay:   rgba(15, 20, 35, 0.85);
+
+  /* Borders */
+  --np-border:            rgba(255, 255, 255, 0.08);
+  --np-border-strong:     rgba(255, 255, 255, 0.14);
+
+  /* Text */
+  --np-text-primary:      #F1F5F9;
+  --np-text-secondary:    #94A3B8;
+  --np-text-muted:        #475569;
+
+  /* Accents */
+  --np-blue:              #3B82F6;
+  --np-blue-hover:        #2563EB;
+  --np-blue-subtle:       rgba(59, 130, 246, 0.12);
+  --np-blue-glow:         rgba(59, 130, 246, 0.3);
+
+  --np-purple:            #8B5CF6;
+  --np-purple-hover:      #7C3AED;
+  --np-purple-subtle:     rgba(139, 92, 246, 0.12);
+  --np-purple-glow:       rgba(139, 92, 246, 0.3);
+
+  --np-green:             #10B981;
+  --np-amber:             #F59E0B;
+  --np-pink:              #EC4899;
+  --np-cyan:              #06B6D4;
+
+  /* Navbar */
+  --np-nav-bg:            rgba(11, 15, 25, 0.85);
+  --np-nav-border:        rgba(255, 255, 255, 0.07);
+
+  /* Toggle */
+  --np-toggle-track:      #1E2C45;
+  --np-toggle-border:     rgba(255, 255, 255, 0.12);
+  --np-toggle-thumb:      #3B82F6;
+  --np-toggle-icon-sun:   rgba(255, 255, 255, 0.25);
+  --np-toggle-icon-moon:  #F1F5F9;
+
+  /* Shadows */
+  --np-shadow-card:       0 4px 24px rgba(0, 0, 0, 0.4);
+  --np-shadow-elevated:   0 20px 60px rgba(0, 0, 0, 0.5);
+
+  /* Orb / glow colors for backgrounds */
+  --np-orb1:              rgba(59, 130, 246, 0.08);
+  --np-orb2:              rgba(139, 92, 246, 0.07);
+  --np-orb3:              rgba(236, 72, 153, 0.05);
+  --np-hero-bg:           radial-gradient(ellipse 80% 60% at 20% 40%, rgba(59,130,246,0.10) 0%, transparent 60%),
+                          radial-gradient(ellipse 70% 60% at 80% 60%, rgba(139,92,246,0.08) 0%, transparent 60%),
+                          #0B0F19;
+  --np-grid-opacity:      0.025;
+
+  /* Scrollbar */
+  --np-scrollbar-thumb:   rgba(255, 255, 255, 0.10);
+  --np-scrollbar-hover:   rgba(255, 255, 255, 0.20);
+
+  /* Selection */
+  --np-selection-bg:      rgba(59, 130, 246, 0.35);
+  --np-selection-text:    #fff;
+}
+
+/* ── Light Theme ──────────────────────────────────────────── */
+html.light {
+  /* Backgrounds */
+  --np-bg-primary:        #FAFAFA;
+  --np-bg-secondary:      #F3F4F6;
+  --np-surface:           #FFFFFF;
+  --np-surface-raised:    #FFFFFF;
+  --np-surface-overlay:   rgba(255, 255, 255, 0.92);
+
+  /* Borders */
+  --np-border:            rgba(0, 0, 0, 0.07);
+  --np-border-strong:     rgba(0, 0, 0, 0.12);
+
+  /* Text */
+  --np-text-primary:      #0F172A;
+  --np-text-secondary:    #475569;
+  --np-text-muted:        #94A3B8;
+
+  /* Accents — same hue, tuned for light */
+  --np-blue:              #2563EB;
+  --np-blue-hover:        #1D4ED8;
+  --np-blue-subtle:       rgba(37, 99, 235, 0.08);
+  --np-blue-glow:         rgba(37, 99, 235, 0.15);
+
+  --np-purple:            #7C3AED;
+  --np-purple-hover:      #6D28D9;
+  --np-purple-subtle:     rgba(124, 58, 237, 0.08);
+  --np-purple-glow:       rgba(124, 58, 237, 0.15);
+
+  --np-green:             #059669;
+  --np-amber:             #D97706;
+  --np-pink:              #DB2777;
+  --np-cyan:              #0891B2;
+
+  /* Navbar */
+  --np-nav-bg:            rgba(250, 250, 250, 0.88);
+  --np-nav-border:        rgba(0, 0, 0, 0.06);
+
+  /* Toggle */
+  --np-toggle-track:      #E2E8F0;
+  --np-toggle-border:     rgba(0, 0, 0, 0.08);
+  --np-toggle-thumb:      #7C3AED;
+  --np-toggle-icon-sun:   #D97706;
+  --np-toggle-icon-moon:  rgba(0, 0, 0, 0.3);
+
+  /* Shadows */
+  --np-shadow-card:       0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
+  --np-shadow-elevated:   0 8px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06);
+
+  /* Orb / glow */
+  --np-orb1:              rgba(37, 99, 235, 0.06);
+  --np-orb2:              rgba(124, 58, 237, 0.05);
+  --np-orb3:              rgba(219, 39, 119, 0.04);
+  --np-hero-bg:           radial-gradient(ellipse 80% 60% at 20% 40%, rgba(37,99,235,0.06) 0%, transparent 60%),
+                          radial-gradient(ellipse 70% 60% at 80% 60%, rgba(124,58,237,0.05) 0%, transparent 60%),
+                          #FAFAFA;
+  --np-grid-opacity:      0.04;
+
+  /* Scrollbar */
+  --np-scrollbar-thumb:   rgba(0, 0, 0, 0.12);
+  --np-scrollbar-hover:   rgba(0, 0, 0, 0.22);
+
+  /* Selection */
+  --np-selection-bg:      rgba(37, 99, 235, 0.20);
+  --np-selection-text:    #0F172A;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Tailwind @theme overrides — map to CSS vars
+   ═══════════════════════════════════════════════════════════ */
 @theme {
-  --color-background-primary: #0B0F19;
-  --color-background-secondary: #111827;
-  --color-surface: #1F2937;
-  --color-border-custom: #374151;
-  --color-text-primary: #F9FAFB;
-  --color-text-secondary: #9CA3AF;
-  --color-electric-blue: #3B82F6;
-  --color-purple-accent: #8B5CF6;
-  --color-success: #10B981;
-  --color-warning: #F59E0B;
+  /* Static design tokens */
+  --color-electric-blue:    #3B82F6;
+  --color-purple-accent:    #8B5CF6;
+  --color-success:          #10B981;
+  --color-warning:          #F59E0B;
 
-  --spacing-xs: 0.5rem;
-  --spacing-sm: 1rem;
-  --spacing-md: 1.5rem;
-  --spacing-lg: 2rem;
-  --spacing-xl: 3rem;
+  --spacing-xs:   0.5rem;
+  --spacing-sm:   1rem;
+  --spacing-md:   1.5rem;
+  --spacing-lg:   2rem;
+  --spacing-xl:   3rem;
 
-  --radius-card: 1rem;
+  --radius-card:   1rem;
   --radius-button: 0.5rem;
-  --radius-modal: 1.5rem;
+  --radius-modal:  1.5rem;
 
-  /* Shadcn Tailwind v4 Mappings */
-  --color-border: hsl(var(--border));
-  --color-input: hsl(var(--input));
-  --color-ring: hsl(var(--ring));
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
-
-  --color-primary: hsl(var(--primary));
-  --color-primary-foreground: hsl(var(--primary-foreground));
-
-  --color-secondary: hsl(var(--secondary));
-  --color-secondary-foreground: hsl(var(--secondary-foreground));
-
-  --color-destructive: hsl(var(--destructive));
-  --color-destructive-foreground: hsl(var(--destructive-foreground));
-
-  --color-muted: hsl(var(--muted));
-  --color-muted-foreground: hsl(var(--muted-foreground));
-
-  --color-accent: hsl(var(--accent));
-  --color-accent-foreground: hsl(var(--accent-foreground));
-
-  --color-popover: hsl(var(--popover));
-  --color-popover-foreground: hsl(var(--popover-foreground));
-
-  --color-card: hsl(var(--card));
-  --color-card-foreground: hsl(var(--card-foreground));
-
+  /* Shadcn Tailwind v4 mappings */
+  --color-border:              hsl(var(--border));
+  --color-input:               hsl(var(--input));
+  --color-ring:                hsl(var(--ring));
+  --color-background:          hsl(var(--background));
+  --color-foreground:          hsl(var(--foreground));
+  --color-primary:             hsl(var(--primary));
+  --color-primary-foreground:  hsl(var(--primary-foreground));
+  --color-secondary:           hsl(var(--secondary));
+  --color-secondary-foreground:hsl(var(--secondary-foreground));
+  --color-destructive:         hsl(var(--destructive));
+  --color-destructive-foreground:hsl(var(--destructive-foreground));
+  --color-muted:               hsl(var(--muted));
+  --color-muted-foreground:    hsl(var(--muted-foreground));
+  --color-accent:              hsl(var(--accent));
+  --color-accent-foreground:   hsl(var(--accent-foreground));
+  --color-popover:             hsl(var(--popover));
+  --color-popover-foreground:  hsl(var(--popover-foreground));
+  --color-card:                hsl(var(--card));
+  --color-card-foreground:     hsl(var(--card-foreground));
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
 }
 
+/* ── Shadcn base vars (dark by default, overridden for light) ── */
 @layer base {
   :root {
     --background: 222.2 84% 4.9%;
@@ -79,8 +208,33 @@
     --ring: 224.3 76.3% 48%;
     --radius: 0.5rem;
   }
+
+  html.light {
+    --background: 0 0% 98%;
+    --foreground: 222.2 84% 4%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4%;
+    --primary: 221.2 83% 53%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 44%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 47% 11%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91%;
+    --input: 214.3 31.8% 91%;
+    --ring: 221.2 83% 53%;
+  }
 }
 
+/* ═══════════════════════════════════════════════════════════
+   GLOBAL BASE STYLES
+   ═══════════════════════════════════════════════════════════ */
 @layer base {
   * {
     @apply border-border;
@@ -96,69 +250,90 @@
 
   body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background-color: var(--color-background-primary);
-    color: var(--color-text-primary);
+    background-color: var(--np-bg-primary);
+    color: var(--np-text-primary);
     overflow-x: hidden;
+
+    /* Smooth theme transitions — everything transitions EXCEPT transforms */
+    transition:
+      background-color 0.35s ease,
+      color 0.35s ease;
   }
 
-  /* Scrollbar styling */
-  ::-webkit-scrollbar {
-    width: 6px;
+  /* Transition all color-bearing properties */
+  *, *::before, *::after {
+    transition:
+      background-color 0.25s ease,
+      border-color 0.25s ease,
+      box-shadow 0.25s ease,
+      color 0.20s ease;
   }
-  ::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.02);
-  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--np-scrollbar-thumb);
     border-radius: 3px;
   }
-  ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.2);
-  }
+  ::-webkit-scrollbar-thumb:hover { background: var(--np-scrollbar-hover); }
 
   /* Selection */
   ::selection {
-    background: rgba(59, 130, 246, 0.35);
-    color: #fff;
+    background: var(--np-selection-bg);
+    color: var(--np-selection-text);
   }
 }
 
-/* ── Utility classes ───────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════
+   UTILITY CLASSES  —  theme-aware
+   ═══════════════════════════════════════════════════════════ */
 @layer utilities {
+  /* Text gradients */
   .text-gradient-blue {
-    background: linear-gradient(135deg, #3B82F6, #8B5CF6);
+    background: linear-gradient(135deg, var(--np-blue), var(--np-purple));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
   .text-gradient-purple {
-    background: linear-gradient(135deg, #8B5CF6, #EC4899);
+    background: linear-gradient(135deg, var(--np-purple), var(--np-pink));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
   .text-gradient-warm {
-    background: linear-gradient(135deg, #F59E0B, #EF4444);
+    background: linear-gradient(135deg, var(--np-amber), #EF4444);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
+  /* Glass card — adapts to theme */
   .glass-card {
-    background: rgba(15, 20, 35, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: var(--np-surface-overlay);
+    border: 1px solid var(--np-border);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
   }
 
-  .glow-blue {
-    box-shadow: 0 0 30px rgba(59, 130, 246, 0.3);
+  .np-card {
+    background: var(--np-surface);
+    border: 1px solid var(--np-border);
+    box-shadow: var(--np-shadow-card);
   }
 
-  .glow-purple {
-    box-shadow: 0 0 30px rgba(139, 92, 246, 0.3);
-  }
+  /* Glows */
+  .glow-blue   { box-shadow: 0 0 30px var(--np-blue-glow); }
+  .glow-purple { box-shadow: 0 0 30px var(--np-purple-glow); }
 
-  .h-13 {
-    height: 3.25rem;
+  /* Height utility */
+  .h-13 { height: 3.25rem; }
+
+  /* Prevent child transitions during theme switch on certain elements */
+  .no-transition, .no-transition * {
+    transition: none !important;
   }
 }

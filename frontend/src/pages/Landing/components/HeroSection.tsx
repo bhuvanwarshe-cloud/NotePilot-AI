@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   Zap,
   ArrowRight,
+  Loader2,
 } from 'lucide-react';
 
 const pipelineSteps = [
@@ -65,18 +66,18 @@ function AnimatedPipeline() {
         transition={{ delay: 0.4, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         className="relative rounded-2xl overflow-hidden border"
         style={{
-          background: 'rgba(15, 20, 35, 0.85)',
-          borderColor: 'rgba(255,255,255,0.1)',
-          boxShadow: '0 25px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05) inset',
+          background: 'var(--np-surface-overlay)',
+          borderColor: 'var(--np-border)',
+          boxShadow: 'var(--np-shadow-elevated)',
           backdropFilter: 'blur(20px)',
         }}
       >
         {/* Title bar */}
-        <div className="flex items-center gap-2 px-4 py-3 border-b" style={{ borderColor: 'rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)' }}>
+        <div className="flex items-center gap-2 px-4 py-3 border-b" style={{ borderColor: 'var(--np-border)', background: 'var(--np-bg-secondary)' }}>
           <div className="w-3 h-3 rounded-full bg-red-500/80" />
           <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
           <div className="w-3 h-3 rounded-full bg-green-500/80" />
-          <div className="ml-3 flex-1 rounded-md px-3 py-1 text-xs font-mono" style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.4)' }}>
+          <div className="ml-3 flex-1 rounded-md px-3 py-1 text-xs font-mono" style={{ background: 'var(--np-surface)', color: 'var(--np-text-muted)' }}>
             notepilot.ai/process
           </div>
         </div>
@@ -86,14 +87,14 @@ function AnimatedPipeline() {
           {/* Header row */}
           <div className="flex items-center justify-between mb-6">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: 'rgba(255,255,255,0.35)' }}>Processing</p>
-              <p className="text-sm font-semibold text-white">Machine_Learning_Lec_1.mp4</p>
+              <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: 'var(--np-text-muted)' }}>Processing</p>
+              <p className="text-sm font-semibold" style={{ color: 'var(--np-text-primary)' }}>Machine_Learning_Lec_1.mp4</p>
             </div>
             <motion.div
               animate={{ opacity: [0.5, 1, 0.5] }}
               transition={{ repeat: Infinity, duration: 1.5 }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
-              style={{ background: 'rgba(59,130,246,0.15)', color: '#60A5FA', border: '1px solid rgba(59,130,246,0.3)' }}
+              style={{ background: 'var(--np-blue-subtle)', color: 'var(--np-blue)', border: '1px solid var(--np-blue-glow)' }}
             >
               <Zap className="w-3 h-3" /> AI Active
             </motion.div>
@@ -116,16 +117,16 @@ function AnimatedPipeline() {
                   className="relative flex items-center gap-4 p-3 rounded-xl transition-all duration-500"
                   style={{
                     background: isActive
-                      ? `rgba(${step.color.match(/\d+/g)!.slice(0,3).join(',')},0.12)`
+                      ? 'var(--np-blue-subtle)'
                       : isDone
-                      ? 'rgba(255,255,255,0.03)'
+                      ? 'rgba(16, 185, 129, 0.08)'
                       : 'transparent',
                     border: isActive
-                      ? `1px solid ${step.color}40`
+                      ? '1px solid var(--np-blue-glow)'
                       : isDone
-                      ? '1px solid rgba(255,255,255,0.06)'
+                      ? '1px solid rgba(16, 185, 129, 0.2)'
                       : '1px solid transparent',
-                    boxShadow: isActive ? `0 0 20px ${step.glow}` : 'none',
+                    boxShadow: isActive ? '0 0 20px var(--np-blue-glow)' : 'none',
                   }}
                 >
                   {/* Connector line */}
@@ -133,7 +134,7 @@ function AnimatedPipeline() {
                     <div
                       className="absolute left-[27px] top-full w-0.5 h-3 z-10"
                       style={{
-                        background: isDone ? step.color : 'rgba(255,255,255,0.08)',
+                        background: isDone ? 'var(--np-green)' : 'var(--np-border)',
                         transition: 'background 0.5s',
                       }}
                     />
@@ -143,17 +144,19 @@ function AnimatedPipeline() {
                   <div
                     className="relative w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-500"
                     style={{
-                      background: isActive || isDone ? `${step.color}22` : 'rgba(255,255,255,0.05)',
-                      border: `1px solid ${isActive ? step.color + '80' : isDone ? step.color + '40' : 'rgba(255,255,255,0.08)'}`,
-                      boxShadow: isActive ? `0 0 12px ${step.glow}` : 'none',
+                      background: isActive ? 'var(--np-surface)' : isDone ? 'rgba(16, 185, 129, 0.15)' : 'var(--np-surface-raised)',
+                      border: isActive ? '1px solid var(--np-blue)' : isDone ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid var(--np-border)',
+                      boxShadow: isActive ? '0 0 12px var(--np-blue-glow)' : 'none',
                     }}
                   >
                     {isDone ? (
                       <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 400, damping: 20 }}>
-                        <CheckCircle2 className="w-4 h-4" style={{ color: step.color }} />
+                        <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--np-green)' }} />
                       </motion.div>
+                    ) : isActive ? (
+                      <Loader2 className="w-4 h-4 animate-spin" style={{ color: 'var(--np-blue)' }} />
                     ) : (
-                      <Icon className="w-4 h-4" style={{ color: isActive ? step.color : isPending ? 'rgba(255,255,255,0.2)' : step.color }} />
+                      <Icon className="w-4 h-4" style={{ color: 'var(--np-text-muted)' }} />
                     )}
 
                     {/* Pulse ring when active */}
@@ -162,7 +165,7 @@ function AnimatedPipeline() {
                         className="absolute inset-0 rounded-xl"
                         animate={{ scale: [1, 1.4, 1], opacity: [0.6, 0, 0.6] }}
                         transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
-                        style={{ border: `1px solid ${step.color}` }}
+                        style={{ border: '1px solid var(--np-blue)' }}
                       />
                     )}
                   </div>
@@ -171,7 +174,7 @@ function AnimatedPipeline() {
                   <span
                     className="text-sm font-medium transition-all duration-500 flex-1"
                     style={{
-                      color: isActive ? '#fff' : isDone ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.25)',
+                      color: isActive ? 'var(--np-text-primary)' : isDone ? 'var(--np-text-primary)' : 'var(--np-text-muted)',
                     }}
                   >
                     {step.label}
@@ -183,45 +186,37 @@ function AnimatedPipeline() {
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
                       className="text-xs px-2 py-0.5 rounded-full font-medium"
-                      style={{ background: `${step.color}22`, color: step.color }}
+                      style={{ background: 'rgba(16, 185, 129, 0.15)', color: 'var(--np-green)' }}
                     >
                       Done
                     </motion.span>
                   )}
                   {isActive && (
-                    <motion.div
-                      className="flex gap-1"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
+                    <motion.span
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1.5"
+                      style={{ background: 'var(--np-blue-subtle)', color: 'var(--np-blue)' }}
                     >
-                      {[0, 1, 2].map(dot => (
-                        <motion.div
-                          key={dot}
-                          className="w-1.5 h-1.5 rounded-full"
-                          style={{ background: step.color }}
-                          animate={{ opacity: [0.3, 1, 0.3] }}
-                          transition={{ repeat: Infinity, duration: 0.8, delay: dot * 0.2 }}
-                        />
-                      ))}
-                    </motion.div>
+                      <Loader2 className="w-3 h-3 animate-spin" /> Processing
+                    </motion.span>
                   )}
                 </motion.div>
               );
             })}
           </div>
 
-          {/* Bottom progress bar */}
-          <div className="mt-5 pt-4 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+          <div className="mt-5 pt-4 border-t" style={{ borderColor: 'var(--np-border)' }}>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.35)' }}>Progress</span>
-              <span className="text-xs font-semibold text-white">
+              <span className="text-xs font-medium" style={{ color: 'var(--np-text-muted)' }}>Progress</span>
+              <span className="text-xs font-semibold" style={{ color: 'var(--np-text-primary)' }}>
                 {Math.round(((completedSteps.length + (activeStep < pipelineSteps.length ? 0.5 : 0)) / pipelineSteps.length) * 100)}%
               </span>
             </div>
-            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
+            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--np-surface-raised)' }}>
               <motion.div
                 className="h-full rounded-full"
-                style={{ background: 'linear-gradient(90deg, #3B82F6, #8B5CF6, #EC4899)' }}
+                style={{ background: 'linear-gradient(90deg, var(--np-blue), var(--np-purple), var(--np-pink))' }}
                 animate={{
                   width: `${Math.round(((completedSteps.length + (activeStep < pipelineSteps.length ? 0.5 : 0)) / pipelineSteps.length) * 100)}%`
                 }}
@@ -237,27 +232,22 @@ function AnimatedPipeline() {
 
 export function HeroSection() {
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden pt-16">
+    <section className="relative min-h-screen flex items-center overflow-hidden pt-16" style={{ background: 'var(--np-bg-primary)' }}>
       {/* ── Animated background ─────────────────────────────────── */}
       <div className="absolute inset-0 -z-10">
-        {/* Mesh gradient base */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background: 'radial-gradient(ellipse 80% 60% at 20% 40%, rgba(59,130,246,0.12) 0%, transparent 60%), radial-gradient(ellipse 70% 60% at 80% 60%, rgba(139,92,246,0.10) 0%, transparent 60%), radial-gradient(ellipse 60% 80% at 50% 100%, rgba(236,72,153,0.07) 0%, transparent 60%), #0B0F19',
-          }}
-        />
+        {/* Mesh gradient base — adapts per theme via CSS var */}
+        <div className="absolute inset-0" style={{ background: 'var(--np-hero-bg)' }} />
 
         {/* Floating orbs */}
         {[
-          { size: 600, x: '-10%', y: '-10%', color: 'rgba(59,130,246,0.07)', dur: 12 },
-          { size: 500, x: '60%',  y: '40%',  color: 'rgba(139,92,246,0.07)', dur: 15 },
-          { size: 400, x: '30%',  y: '70%',  color: 'rgba(236,72,153,0.05)', dur: 18 },
+          { size: 600, x: '-10%', y: '-10%', varName: 'var(--np-orb1)', dur: 12 },
+          { size: 500, x: '60%',  y: '40%',  varName: 'var(--np-orb2)', dur: 15 },
+          { size: 400, x: '30%',  y: '70%',  varName: 'var(--np-orb3)', dur: 18 },
         ].map((orb, i) => (
           <motion.div
             key={i}
             className="absolute rounded-full blur-3xl"
-            style={{ width: orb.size, height: orb.size, left: orb.x, top: orb.y, background: orb.color }}
+            style={{ width: orb.size, height: orb.size, left: orb.x, top: orb.y, background: orb.varName }}
             animate={{ x: [0, 30, -20, 0], y: [0, -20, 30, 0] }}
             transition={{ duration: orb.dur, repeat: Infinity, ease: 'easeInOut' }}
           />
@@ -273,19 +263,20 @@ export function HeroSection() {
               height: Math.random() * 3 + 1,
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
-              background: ['#3B82F6', '#8B5CF6', '#EC4899', '#10B981'][Math.floor(Math.random() * 4)],
-              opacity: Math.random() * 0.4 + 0.1,
+              background: ['var(--np-blue)', 'var(--np-purple)', 'var(--np-pink)', 'var(--np-green)'][Math.floor(Math.random() * 4)],
+              opacity: Math.random() * 0.25 + 0.05,
             }}
-            animate={{ opacity: [0.1, 0.6, 0.1], scale: [1, 1.5, 1] }}
+            animate={{ opacity: [0.05, 0.3, 0.05], scale: [1, 1.5, 1] }}
             transition={{ duration: Math.random() * 4 + 2, repeat: Infinity, delay: Math.random() * 3 }}
           />
         ))}
 
-        {/* Grid overlay */}
+        {/* Grid overlay — theme-reactive opacity */}
         <div
-          className="absolute inset-0 opacity-[0.03]"
+          className="absolute inset-0"
           style={{
-            backgroundImage: 'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)',
+            opacity: 'var(--np-grid-opacity)',
+            backgroundImage: 'linear-gradient(var(--np-border-strong) 1px, transparent 1px), linear-gradient(90deg, var(--np-border-strong) 1px, transparent 1px)',
             backgroundSize: '60px 60px',
           }}
         />
@@ -304,9 +295,9 @@ export function HeroSection() {
               transition={{ duration: 0.5 }}
               className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-8 text-sm font-medium"
               style={{
-                background: 'rgba(59,130,246,0.1)',
-                border: '1px solid rgba(59,130,246,0.25)',
-                color: '#60A5FA',
+                background: 'var(--np-blue-subtle)',
+                border: '1px solid var(--np-blue-glow)',
+                color: 'var(--np-blue)',
               }}
             >
               <Zap className="w-3.5 h-3.5" />
@@ -340,7 +331,7 @@ export function HeroSection() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.6 }}
               className="text-lg leading-relaxed mb-10"
-              style={{ color: 'rgba(255,255,255,0.6)', maxWidth: '480px' }}
+              style={{ color: 'var(--np-text-secondary)', maxWidth: '480px' }}
             >
               Upload recordings, videos, PDFs, or textbook chapters and instantly generate notes, flashcards, mind maps, quizzes, and AI-powered explanations.
             </motion.p>
@@ -372,9 +363,9 @@ export function HeroSection() {
                 variant="outline"
                 className="h-13 px-8 text-base font-semibold rounded-full group"
                 style={{
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  color: 'rgba(255,255,255,0.8)',
+                  background: 'var(--np-surface)',
+                  border: '1px solid var(--np-border-strong)',
+                  color: 'var(--np-text-primary)',
                 }}
               >
                 <Play className="w-4 h-4 mr-2 fill-current" />
@@ -397,10 +388,10 @@ export function HeroSection() {
                 <div key={stat.label} className="flex items-center gap-2">
                   <div
                     className="w-1.5 h-1.5 rounded-full"
-                    style={{ background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)' }}
+                    style={{ background: 'linear-gradient(135deg, var(--np-blue), var(--np-purple))' }}
                   />
-                  <span className="text-sm font-semibold text-white">{stat.value}</span>
-                  <span className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>{stat.label}</span>
+                  <span className="text-sm font-semibold" style={{ color: 'var(--np-text-primary)' }}>{stat.value}</span>
+                  <span className="text-sm" style={{ color: 'var(--np-text-muted)' }}>{stat.label}</span>
                 </div>
               ))}
             </motion.div>

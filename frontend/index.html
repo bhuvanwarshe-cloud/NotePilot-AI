@@ -4,7 +4,27 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
+    <title>NotePilot AI — Transform Lectures Into Exam Success</title>
+    <meta name="description" content="Upload recordings, videos, PDFs, or textbook chapters and instantly generate notes, flashcards, mind maps, quizzes, and AI-powered explanations." />
+    <!-- Google Fonts: Inter — loaded here to avoid PostCSS @import ordering issues -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Prevent FOUC: apply theme class immediately from localStorage -->
+    <script>
+      try {
+        var t = localStorage.getItem('notepilot-theme');
+        var theme = t === 'light' || t === 'dark'
+          ? t
+          : window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        document.documentElement.classList.add(theme);
+      } catch(e) {
+        document.documentElement.classList.add('dark');
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

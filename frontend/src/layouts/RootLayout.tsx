@@ -4,10 +4,15 @@ import { Footer } from '@/components/layout/Footer';
 
 export function RootLayout() {
   return (
-    <div className="min-h-screen flex flex-col relative bg-backgroundPrimary text-textPrimary">
+    <div
+      className="min-h-screen flex flex-col relative"
+      style={{
+        background: 'var(--np-bg-primary)',
+        color: 'var(--np-text-primary)',
+      }}
+    >
       <Navbar />
 
-      {/* Main Content Area */}
       <main className="flex-1 flex flex-col w-full pt-16">
         <Outlet />
       </main>

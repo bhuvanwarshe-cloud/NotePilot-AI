@@ -1,27 +1,32 @@
 import type { HTMLAttributes, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import { DesignSystem } from '@/styles/design-system';
 
 interface GlassCardProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
 }
 
-export function GlassCard({ children, className, ...props }: GlassCardProps) {
+/**
+ * GlassCard — fully theme-aware using CSS variable tokens.
+ * Reads --np-* vars so it adapts to dark/light mode automatically.
+ */
+export function GlassCard({ children, className, style, ...props }: GlassCardProps) {
   return (
     <div
-      className={cn(
-        "relative overflow-hidden border backdrop-blur-xl",
-        className
-      )}
+      className={cn('relative overflow-hidden backdrop-blur-xl', className)}
       style={{
-        backgroundColor: `${DesignSystem.colors.surface}80`, // 80 hex is 50% opacity
-        borderColor: `${DesignSystem.colors.border}80`,
-        borderRadius: DesignSystem.borderRadius.card,
-        boxShadow: DesignSystem.shadows.md,
+        background: 'var(--np-surface)',
+        border: '1px solid var(--np-border)',
+        borderRadius: '1rem',
+        boxShadow: 'var(--np-shadow-card)',
+        ...style,
       }}
       {...props}
     >
-      <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
+      {/* Subtle inner highlight — adapts per theme */}
+      <div
+        className="absolute inset-0 pointer-events-none rounded-[inherit]"
+        style={{ background: 'linear-gradient(135deg, var(--np-blue-subtle) 0%, transparent 60%)' }}
+      />
       {children}
     </div>
   );

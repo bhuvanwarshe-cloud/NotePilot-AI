@@ -1,48 +1,89 @@
 export function Footer() {
   return (
-    <footer className="bg-backgroundPrimary border-t border-border/50 py-12 px-6">
+    <footer
+      className="py-12 px-6"
+      style={{
+        background: 'var(--np-bg-secondary)',
+        borderTop: '1px solid var(--np-border)',
+      }}
+    >
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
+        {/* Brand */}
         <div className="space-y-4">
           <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 rounded bg-gradient-to-br from-electricBlue to-purpleAccent flex items-center justify-center">
+            <div
+              className="w-6 h-6 rounded-md flex items-center justify-center"
+              style={{ background: 'linear-gradient(135deg, var(--np-blue), var(--np-purple))' }}
+            >
               <span className="text-white font-bold text-xs">N</span>
             </div>
-            <span className="font-bold text-lg text-textPrimary">NotePilot</span>
+            <span
+              className="font-bold text-lg"
+              style={{ color: 'var(--np-text-primary)' }}
+            >
+              NotePilot
+            </span>
           </div>
-          <p className="text-textSecondary text-sm">
+          <p className="text-sm leading-relaxed" style={{ color: 'var(--np-text-secondary)' }}>
             Transforming how students learn with AI-powered notes and study tools.
           </p>
         </div>
-        
-        <div>
-          <h4 className="font-semibold text-textPrimary mb-4">Product</h4>
-          <ul className="space-y-2 text-sm text-textSecondary">
-            <li><a href="#features" className="hover:text-electricBlue transition-colors">Features</a></li>
-            <li><a href="#pricing" className="hover:text-electricBlue transition-colors">Pricing</a></li>
-            <li><a href="#" className="hover:text-electricBlue transition-colors">Changelog</a></li>
-          </ul>
-        </div>
 
-        <div>
-          <h4 className="font-semibold text-textPrimary mb-4">Company</h4>
-          <ul className="space-y-2 text-sm text-textSecondary">
-            <li><a href="#" className="hover:text-electricBlue transition-colors">About</a></li>
-            <li><a href="#" className="hover:text-electricBlue transition-colors">Blog</a></li>
-            <li><a href="#" className="hover:text-electricBlue transition-colors">Careers</a></li>
-          </ul>
-        </div>
+        {/* Product */}
+        <FooterCol title="Product" links={[
+          { label: 'Features',  href: '#features' },
+          { label: 'Pricing',   href: '#pricing'  },
+          { label: 'Changelog', href: '#'         },
+        ]} />
 
-        <div>
-          <h4 className="font-semibold text-textPrimary mb-4">Legal</h4>
-          <ul className="space-y-2 text-sm text-textSecondary">
-            <li><a href="#" className="hover:text-electricBlue transition-colors">Privacy Policy</a></li>
-            <li><a href="#" className="hover:text-electricBlue transition-colors">Terms of Service</a></li>
-          </ul>
-        </div>
+        {/* Company */}
+        <FooterCol title="Company" links={[
+          { label: 'About',   href: '#' },
+          { label: 'Blog',    href: '#' },
+          { label: 'Careers', href: '#' },
+        ]} />
+
+        {/* Legal */}
+        <FooterCol title="Legal" links={[
+          { label: 'Privacy Policy',  href: '#' },
+          { label: 'Terms of Service', href: '#' },
+        ]} />
       </div>
-      <div className="max-w-7xl mx-auto mt-12 pt-8 border-t border-border/50 text-center text-sm text-textSecondary">
+
+      <div
+        className="max-w-7xl mx-auto mt-12 pt-8 text-center text-sm"
+        style={{
+          borderTop: '1px solid var(--np-border)',
+          color: 'var(--np-text-muted)',
+        }}
+      >
         © {new Date().getFullYear()} NotePilot. All rights reserved.
       </div>
     </footer>
+  );
+}
+
+function FooterCol({ title, links }: { title: string; links: { label: string; href: string }[] }) {
+  return (
+    <div>
+      <h4 className="font-semibold mb-4 text-sm" style={{ color: 'var(--np-text-primary)' }}>
+        {title}
+      </h4>
+      <ul className="space-y-2.5">
+        {links.map(({ label, href }) => (
+          <li key={label}>
+            <a
+              href={href}
+              className="text-sm transition-colors duration-200"
+              style={{ color: 'var(--np-text-secondary)' }}
+              onMouseEnter={e => (e.currentTarget.style.color = 'var(--np-blue)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'var(--np-text-secondary)')}
+            >
+              {label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

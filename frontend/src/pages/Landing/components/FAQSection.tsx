@@ -4,6 +4,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { motion } from 'framer-motion';
 
 const faqs = [
   {
@@ -30,20 +31,51 @@ const faqs = [
 
 export function FAQSection() {
   return (
-    <section id="faq" className="py-24">
+    <section
+      id="faq"
+      className="py-24"
+      style={{ background: 'var(--np-bg-primary)' }}
+    >
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-5xl font-bold mb-4">Frequently Asked Questions</h2>
-          <p className="text-xl text-textSecondary">Got questions? We've got answers.</p>
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-3xl md:text-5xl font-bold mb-4"
+            style={{ color: 'var(--np-text-primary)' }}
+          >
+            Frequently Asked Questions
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="text-xl"
+            style={{ color: 'var(--np-text-secondary)' }}
+          >
+            Got questions? We've got answers.
+          </motion.p>
         </div>
 
         <Accordion type="single" collapsible className="w-full">
           {faqs.map((faq, index) => (
-            <AccordionItem key={index} value={`item-${index}`} className="border-border/50 border-b">
-              <AccordionTrigger className="text-left text-lg font-medium text-textPrimary hover:text-electricBlue hover:no-underline py-6">
+            <AccordionItem
+              key={index}
+              value={`item-${index}`}
+              style={{ borderColor: 'var(--np-border)' }}
+            >
+              <AccordionTrigger
+                className="text-left text-lg font-medium hover:no-underline py-6 transition-colors duration-200"
+                style={{ color: 'var(--np-text-primary)' }}
+              >
                 {faq.question}
               </AccordionTrigger>
-              <AccordionContent className="text-textSecondary text-base leading-relaxed pb-6">
+              <AccordionContent
+                className="text-base leading-relaxed pb-6"
+                style={{ color: 'var(--np-text-secondary)' }}
+              >
                 {faq.answer}
               </AccordionContent>
             </AccordionItem>
