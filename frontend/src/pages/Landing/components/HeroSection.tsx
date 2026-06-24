@@ -13,8 +13,9 @@ import {
   CheckCircle2,
   Zap,
   ArrowRight,
-  Loader2,
 } from 'lucide-react';
+import { BrandLoader } from '@/components/shared/BrandLoader';
+import { brand } from '@/styles/brand';
 
 const pipelineSteps = [
   { icon: Upload,     label: 'Audio Upload',         color: '#3B82F6', glow: 'rgba(59,130,246,0.4)' },
@@ -117,16 +118,16 @@ function AnimatedPipeline() {
                   className="relative flex items-center gap-4 p-3 rounded-xl transition-all duration-500"
                   style={{
                     background: isActive
-                      ? 'var(--np-blue-subtle)'
+                      ? brand.status.processing.bg
                       : isDone
-                      ? 'rgba(16, 185, 129, 0.08)'
-                      : 'transparent',
+                      ? brand.status.done.bg
+                      : brand.status.pending.bg,
                     border: isActive
-                      ? '1px solid var(--np-blue-glow)'
+                      ? `1px solid ${brand.status.processing.border}`
                       : isDone
-                      ? '1px solid rgba(16, 185, 129, 0.2)'
-                      : '1px solid transparent',
-                    boxShadow: isActive ? '0 0 20px var(--np-blue-glow)' : 'none',
+                      ? `1px solid ${brand.status.done.border}`
+                      : `1px solid ${brand.status.pending.border}`,
+                    boxShadow: isActive ? `0 0 20px ${brand.glows.statusProcessing}` : 'none',
                   }}
                 >
                   {/* Connector line */}
@@ -134,7 +135,7 @@ function AnimatedPipeline() {
                     <div
                       className="absolute left-[27px] top-full w-0.5 h-3 z-10"
                       style={{
-                        background: isDone ? 'var(--np-green)' : 'var(--np-border)',
+                        background: isDone ? brand.status.done.color : brand.status.pending.border,
                         transition: 'background 0.5s',
                       }}
                     />
@@ -144,28 +145,31 @@ function AnimatedPipeline() {
                   <div
                     className="relative w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-500"
                     style={{
-                      background: isActive ? 'var(--np-surface)' : isDone ? 'rgba(16, 185, 129, 0.15)' : 'var(--np-surface-raised)',
-                      border: isActive ? '1px solid var(--np-blue)' : isDone ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid var(--np-border)',
-                      boxShadow: isActive ? '0 0 12px var(--np-blue-glow)' : 'none',
+                      background: isActive ? 'var(--np-surface)' : isDone ? brand.status.done.bg : 'var(--np-surface-raised)',
+                      border: isActive ? `1px solid ${brand.colors.primary}` : isDone ? `1px solid ${brand.status.done.border}` : `1px solid ${brand.status.pending.border}`,
+                      boxShadow: isActive ? `0 0 12px ${brand.glows.statusProcessing}` : 'none',
                     }}
                   >
                     {isDone ? (
                       <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 400, damping: 20 }}>
-                        <CheckCircle2 className="w-4 h-4" style={{ color: 'var(--np-green)' }} />
+                        <CheckCircle2 className="w-4 h-4" style={{ color: brand.status.done.color }} />
                       </motion.div>
                     ) : isActive ? (
-                      <Loader2 className="w-4 h-4 animate-spin" style={{ color: 'var(--np-blue)' }} />
+                      <BrandLoader className="w-5 h-5" />
                     ) : (
-                      <Icon className="w-4 h-4" style={{ color: 'var(--np-text-muted)' }} />
+                      <Icon className="w-4 h-4" style={{ color: brand.status.pending.color }} />
                     )}
 
-                    {/* Pulse ring when active */}
+                    {/* Pulse ring when active using brand gradient */}
                     {isActive && (
                       <motion.div
                         className="absolute inset-0 rounded-xl"
                         animate={{ scale: [1, 1.4, 1], opacity: [0.6, 0, 0.6] }}
                         transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
-                        style={{ border: '1px solid var(--np-blue)' }}
+                        style={{ 
+                          background: brand.gradients.processing,
+                          border: `1px solid ${brand.colors.primary}` 
+                        }}
                       />
                     )}
                   </div>
@@ -186,7 +190,7 @@ function AnimatedPipeline() {
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
                       className="text-xs px-2 py-0.5 rounded-full font-medium"
-                      style={{ background: 'rgba(16, 185, 129, 0.15)', color: 'var(--np-green)' }}
+                      style={{ background: brand.status.done.bg, color: brand.status.done.color }}
                     >
                       Done
                     </motion.span>
@@ -196,9 +200,9 @@ function AnimatedPipeline() {
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
                       className="text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1.5"
-                      style={{ background: 'var(--np-blue-subtle)', color: 'var(--np-blue)' }}
+                      style={{ background: brand.status.processing.bg, color: brand.status.processing.color }}
                     >
-                      <Loader2 className="w-3 h-3 animate-spin" /> Processing
+                      <BrandLoader className="w-3 h-3" /> Processing
                     </motion.span>
                   )}
                 </motion.div>
@@ -216,7 +220,7 @@ function AnimatedPipeline() {
             <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--np-surface-raised)' }}>
               <motion.div
                 className="h-full rounded-full"
-                style={{ background: 'linear-gradient(90deg, var(--np-blue), var(--np-purple), var(--np-pink))' }}
+                style={{ background: brand.gradients.primary }}
                 animate={{
                   width: `${Math.round(((completedSteps.length + (activeStep < pipelineSteps.length ? 0.5 : 0)) / pipelineSteps.length) * 100)}%`
                 }}

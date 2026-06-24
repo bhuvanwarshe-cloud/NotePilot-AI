@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
+import { LogoFull } from '@/components/shared/LogoFull';
+import { LogoIcon } from '@/components/shared/LogoIcon';
 
 export function Navbar() {
   return (
@@ -17,19 +19,21 @@ export function Navbar() {
     >
       <div className="flex items-center justify-between px-6 h-full max-w-7xl mx-auto w-full">
         {/* Logo */}
-        <Link to="/" className="flex items-center space-x-2 flex-shrink-0">
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-            style={{ background: 'linear-gradient(135deg, var(--np-blue), var(--np-purple))' }}
+        <Link to="/" className="flex items-center flex-shrink-0 relative group">
+          {/* Subtle glow on hover */}
+          <motion.div 
+            className="absolute inset-0 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+            style={{ background: 'var(--np-blue-glow)' }}
+          />
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+            className="relative z-10 flex items-center"
           >
-            <span className="text-white font-bold text-base leading-none">N</span>
-          </div>
-          <span
-            className="font-extrabold text-xl tracking-tight"
-            style={{ color: 'var(--np-text-primary)' }}
-          >
-            NotePilot
-          </span>
+            <LogoFull className="h-10 hidden sm:block object-contain" />
+            <LogoIcon className="h-10 sm:hidden object-contain" />
+          </motion.div>
         </Link>
 
         {/* Nav links */}

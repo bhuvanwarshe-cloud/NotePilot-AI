@@ -1,9 +1,11 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { RootLayout } from './layouts/RootLayout';
 import { DashboardLayout } from './layouts/DashboardLayout';
+import { AuthLayout } from './layouts/AuthLayout';
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { SignupPage } from './pages/SignupPage';
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { DashboardPage } from './pages/Dashboard/DashboardPage';
 
 function App() {
@@ -13,8 +15,13 @@ function App() {
         {/* Public Routes with RootLayout */}
         <Route element={<RootLayout />}>
           <Route path="/" element={<LandingPage />} />
+        </Route>
+
+        {/* Auth Routes with AuthLayout */}
+        <Route element={<AuthLayout />}>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         </Route>
 
         {/* Dashboard Routes with DashboardLayout */}

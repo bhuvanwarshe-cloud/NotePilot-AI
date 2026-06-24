@@ -201,15 +201,20 @@ export function SocialProofSection() {
             </span>
           </motion.h2>
 
-          <motion.p
-            initial={{ opacity: 0, y: 15 }}
-            animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ delay: 0.2, duration: 0.5 }}
-            className="text-base max-w-xl mx-auto"
-            style={{ color: 'var(--np-text-secondary)' }}
-          >
-            From engineering to medicine to law — students worldwide use NotePilot to study smarter and outperform their peers.
-          </motion.p>
+         <motion.p
+  initial={{ opacity: 0, y: 15 }}
+  animate={isInView ? { opacity: 1, y: 0 } : {}}
+  transition={{ delay: 0.2, duration: 0.5 }}
+  className="max-w-3xl mx-auto text-center text-lg leading-relaxed px-4"
+  style={{
+    color: 'var(--np-text-secondary)',
+    whiteSpace: 'normal',
+    wordBreak: 'normal',
+  }}
+>
+  From engineering to medicine to law — students worldwide use
+  NotePilot to study smarter and outperform their peers.
+</motion.p>
 
           {/* Aggregate stats */}
           <motion.div

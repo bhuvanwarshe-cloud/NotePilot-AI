@@ -1,3 +1,6 @@
+import { Link } from 'react-router-dom';
+import { LogoFull } from '@/components/shared/LogoFull';
+
 export function Footer() {
   return (
     <footer
@@ -10,22 +13,9 @@ export function Footer() {
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
         {/* Brand */}
         <div className="space-y-4">
-          <div className="flex items-center space-x-2">
-            <div
-              className="w-6 h-6 rounded-md flex items-center justify-center"
-              style={{ background: 'linear-gradient(135deg, var(--np-blue), var(--np-purple))' }}
-            >
-              <span className="text-white font-bold text-xs">N</span>
-            </div>
-            <span
-              className="font-bold text-lg"
-              style={{ color: 'var(--np-text-primary)' }}
-            >
-              NotePilot
-            </span>
-          </div>
-          <p className="text-sm leading-relaxed" style={{ color: 'var(--np-text-secondary)' }}>
-            Transforming how students learn with AI-powered notes and study tools.
+          <LogoFull className="h-9 object-contain" />
+          <p className="text-sm leading-relaxed font-medium" style={{ color: 'var(--np-text-secondary)' }}>
+            Study Smarter. Achieve More.
           </p>
         </div>
 
