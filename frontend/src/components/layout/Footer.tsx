@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom';
 import { LogoFull } from '@/components/shared/LogoFull';
 
 export function Footer() {

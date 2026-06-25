@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -8,18 +8,17 @@ import { useTheme } from '@/contexts/ThemeContext';
  *  ☀️  ○──────◉  🌙   (light mode — thumb on left)
  */
 export function ThemeToggle() {
-  const { theme, toggleTheme, isDark } = useTheme();
+  const { toggleTheme, isDark } = useTheme();
 
   return (
     <button
       onClick={toggleTheme}
       aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
       title={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-      className="relative flex items-center gap-2 px-2 py-1.5 rounded-full select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+      className="relative flex items-center gap-2 px-2 py-1.5 rounded-full select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
       style={{
         background: 'var(--np-toggle-track)',
         border: '1px solid var(--np-toggle-border)',
-        focusRingColor: 'var(--np-blue)',
       }}
     >
       {/* ── Sun icon ── */}

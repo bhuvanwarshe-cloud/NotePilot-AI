@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, User, CheckCircle } from 'lucide-react';
 import { AuthCard } from '@/components/auth/AuthCard';
 import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';

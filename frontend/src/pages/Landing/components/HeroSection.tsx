@@ -1,4 +1,4 @@
-import { motion, useAnimation } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
@@ -107,7 +107,6 @@ function AnimatedPipeline() {
               const Icon = step.icon;
               const isActive = activeStep === i;
               const isDone = completedSteps.includes(i);
-              const isPending = !isActive && !isDone;
 
               return (
                 <motion.div
