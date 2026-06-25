@@ -3,6 +3,7 @@ import { Outlet, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { LayoutDashboard, Library, Bot, ScrollText, Network, HelpCircle, Settings, Menu, X } from 'lucide-react';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
+import { useAuth } from '@/hooks/useAuth';
 
 const sidebarItems = [
   { name: 'Dashboard',  icon: LayoutDashboard, path: '/dashboard' },
@@ -19,6 +20,10 @@ const bottomItems = [
 
 export function DashboardLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const { user, profile } = useAuth();
+
+  const displayName = profile?.full_name ?? user?.email ?? 'U';
+  const initial = displayName[0]?.toUpperCase() ?? 'U';
 
   return (
     <div
@@ -120,11 +125,11 @@ export function DashboardLayout() {
           </div>
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <div
+              <div
               className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm text-white"
               style={{ background: 'linear-gradient(135deg, var(--np-blue), var(--np-purple))' }}
             >
-              U
+              {initial}
             </div>
           </div>
         </header>

@@ -1,16 +1,25 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, ArrowLeft, Send } from 'lucide-react';
+import { Mail, ArrowLeft, Send, Loader2 } from 'lucide-react';
 import { AuthCard } from '@/components/auth/AuthCard';
+import { useAuth } from '@/hooks/useAuth';
 
 export function ForgotPasswordPage() {
+  const { resetPassword } = useAuth();
   const [email, setEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
+    setFormError(null);
+    setIsLoading(true);
+    const { error } = await resetPassword(email);
+    setIsLoading(false);
+    if (error) { setFormError(error); return; }
     setIsSuccess(true);
   };
 
@@ -130,18 +139,29 @@ export function ForgotPasswordPage() {
                 </div>
               </div>
 
+              {formError && (
+                <p style={{ fontSize: '13px', color: 'var(--np-error)', margin: 0, padding: '10px 14px', borderRadius: '10px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                  {formError}
+                </p>
+              )}
+
               <motion.button
                 type="submit"
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
+                disabled={isLoading}
+                whileHover={{ scale: isLoading ? 1 : 1.01 }}
+                whileTap={{ scale: isLoading ? 1 : 0.99 }}
                 style={{
                   width: '100%', height: '52px', borderRadius: '12px', border: 'none',
                   background: 'linear-gradient(135deg, #3B82F6 0%, #7C3AED 100%)',
-                  color: '#fff', fontSize: '15px', fontWeight: 700, cursor: 'pointer',
+                  color: '#fff', fontSize: '15px', fontWeight: 700,
+                  cursor: isLoading ? 'not-allowed' : 'pointer',
                   boxShadow: '0 4px 20px rgba(59,130,246,0.35)',
+                  opacity: isLoading ? 0.75 : 1,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                 }}
               >
-                Send Reset Link
+                {isLoading && <Loader2 style={{ width: 18, height: 18, animation: 'spin 1s linear infinite' }} />}
+                {isLoading ? 'Sending...' : 'Send Reset Link'}
               </motion.button>
             </form>
 
