@@ -10,6 +10,8 @@ import { LoginPage } from './pages/LoginPage';
 import { SignupPage } from './pages/SignupPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { DashboardPage } from './pages/Dashboard/DashboardPage';
+import { UploadPage } from './pages/Upload/UploadPage';
+import { StudyWorkspacePage } from './pages/Study/StudyWorkspacePage';
 
 function App() {
   return (
@@ -34,6 +36,8 @@ function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<DashboardLayout />}>
               <Route index element={<DashboardPage />} />
+              <Route path="upload" element={<UploadPage />} />
+              <Route path="notes" element={<StudyWorkspacePage />} />
               <Route path="lectures" element={<div>My Lectures Placeholder</div>} />
               <Route path="tutor" element={<div>AI Tutor Placeholder</div>} />
               <Route path="flashcards" element={<div>Flashcards Placeholder</div>} />

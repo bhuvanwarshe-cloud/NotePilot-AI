@@ -11,28 +11,36 @@ interface StatData {
   badge?: React.ReactNode;
 }
 
-export function QuickStats() {
+interface QuickStatsProps {
+  counts: {
+    lectureCount: number;
+    noteCount: number;
+    flashcardCount: number;
+  };
+}
+
+export function QuickStats({ counts }: QuickStatsProps) {
   const { profile } = useAuth();
   const plan = profile?.plan ?? 'Free';
 
   const STATS: StatData[] = [
     {
       label: 'Lectures',
-      value: 0,
+      value: counts.lectureCount,
       Icon: Library,
       accentColor: 'var(--np-blue)',
       accentBg: 'var(--np-blue-subtle)',
     },
     {
       label: 'Notes',
-      value: 0,
+      value: counts.noteCount,
       Icon: ScrollText,
       accentColor: 'var(--np-purple)',
       accentBg: 'var(--np-purple-subtle)',
     },
     {
       label: 'Flashcards',
-      value: 0,
+      value: counts.flashcardCount,
       Icon: BrainCircuit,
       accentColor: '#10B981',
       accentBg: 'rgba(16,185,129,0.10)',

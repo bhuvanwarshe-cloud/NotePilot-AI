@@ -9,9 +9,17 @@ export interface FocusItem {
 
 interface TodaysFocusProps {
   items: FocusItem[];
+  title?: string;
+  emptyTitle?: string;
+  emptyMessage?: string;
 }
 
-export function TodaysFocus({ items }: TodaysFocusProps) {
+export function TodaysFocus({
+  items,
+  title = "Today's Focus",
+  emptyTitle = 'No focus items yet',
+  emptyMessage = 'Upload your first lecture to receive AI-generated study recommendations.',
+}: TodaysFocusProps) {
   return (
     <motion.section
       initial={{ opacity: 0, y: 10 }}
@@ -26,7 +34,7 @@ export function TodaysFocus({ items }: TodaysFocusProps) {
           margin: '0 0 16px',
         }}
       >
-        Today's Focus
+        {title}
       </h2>
 
       {items.length === 0 ? (
@@ -65,7 +73,7 @@ export function TodaysFocus({ items }: TodaysFocusProps) {
               margin: 0,
             }}
           >
-            No focus items yet
+            {emptyTitle}
           </p>
           <p
             style={{
@@ -76,7 +84,7 @@ export function TodaysFocus({ items }: TodaysFocusProps) {
               margin: 0,
             }}
           >
-            Upload your first lecture to receive AI-generated study recommendations.
+            {emptyMessage}
           </p>
         </div>
       ) : (

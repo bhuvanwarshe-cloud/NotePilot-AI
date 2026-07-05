@@ -1,5 +1,6 @@
 import { Upload, Mic, Video, FileText, PlaySquare, BookOpen, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 
 function getGreeting() {
@@ -27,9 +28,11 @@ const FORMATS = [
 
 export function DashboardHero() {
   const { user, profile } = useAuth();
+  const navigate = useNavigate();
   const { text: greet, emoji } = getGreeting();
-  const firstName =
-    profile?.full_name?.split(' ')[0] ??
+  
+  const displayName =
+    profile?.full_name ??
     user?.email?.split('@')[0] ??
     'Student';
 
@@ -98,7 +101,7 @@ export function DashboardHero() {
                 backgroundClip: 'text',
               }}
             >
-              {firstName}.
+              {displayName}.
             </span>
           </h1>
           <p
@@ -139,6 +142,7 @@ export function DashboardHero() {
         {/* CTA */}
         <div>
           <button
+            onClick={() => navigate('/dashboard/upload')}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -182,16 +186,17 @@ export function DashboardHero() {
           padding: '40px 36px',
         }}
       >
-        <UploadDropzone />
+        <UploadDropzone onClick={() => navigate('/dashboard/upload')} />
       </div>
     </motion.div>
   );
 }
 
 // ─── Upload dropzone panel ────────────────────────────────────────────────────
-function UploadDropzone() {
+function UploadDropzone({ onClick }: { onClick: () => void }) {
   return (
     <div
+      onClick={onClick}
       style={{
         width: '100%',
         maxWidth: 360,

@@ -77,8 +77,9 @@ export function DashboardSidebar() {
   const [loggingOut, setLoggingOut] = useState(false);
 
   const displayName = profile?.full_name ?? user?.email?.split('@')[0] ?? 'Student';
-  const initial = (profile?.full_name ?? user?.email ?? 'S')[0].toUpperCase();
+  const initial = displayName[0].toUpperCase();
   const plan = profile?.plan ?? 'Free';
+  const avatarUrl = profile?.avatar_url;
 
   const handleLogout = async () => {
     if (loggingOut) return;
@@ -242,9 +243,14 @@ export function DashboardSidebar() {
               fontSize: 13,
               fontWeight: 700,
               flexShrink: 0,
+              overflow: 'hidden',
             }}
           >
-            {initial}
+            {avatarUrl ? (
+              <img src={avatarUrl} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              initial
+            )}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <p

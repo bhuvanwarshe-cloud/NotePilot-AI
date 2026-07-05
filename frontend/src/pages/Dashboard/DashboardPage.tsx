@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+
 import { DashboardGrid, DashboardMainGrid } from './layouts/DashboardGrid';
 import {
   DashboardHero,
@@ -7,13 +7,16 @@ import {
   TodaysFocus,
   AiActivity,
   StudyProgress,
+  ContinueLearning,
+  RecentUploads,
 } from './widgets';
+
+import { useDashboardData } from '@/hooks/useDashboardData';
 
 /**
  * DashboardPage
  * 
- * Phase 5: Static layout with honest empty states.
- * Phase 6: Replace empty arrays/objects with real Supabase queries.
+ * Phase 5.1: Connected to real data using useDashboardData hook.
  * 
  * Layout:
  *   Hero         (full-width, 60/40 grid)
@@ -25,10 +28,7 @@ import {
  *   TodaysFocus
  */
 export function DashboardPage() {
-  const emptyLectures  = useMemo(() => [], []);
-  const emptyFocus     = useMemo(() => [], []);
-  const emptyActivity  = useMemo(() => [], []);
-  const emptyStats     = useMemo(() => ({}), []);
+  const { lectures, activities, recentNotes, lectureCount, noteCount, flashcardCount, stats } = useDashboardData();
 
   return (
     <DashboardGrid>
@@ -36,7 +36,7 @@ export function DashboardPage() {
       <DashboardHero />
 
       {/* Quick Stats */}
-      <QuickStats />
+      <QuickStats counts={{ lectureCount, noteCount, flashcardCount }} />
 
       {/* 12-column main grid */}
       <DashboardMainGrid>
@@ -49,8 +49,14 @@ export function DashboardPage() {
             gap: 28,
           }}
         >
-          <RecentLectures lectures={emptyLectures} />
-          <TodaysFocus items={emptyFocus} />
+          <ContinueLearning items={recentNotes} />
+          
+          <TodaysFocus
+            items={[]} // Could be populated with actual AI recommendations later
+            title="Today's Focus"
+            emptyTitle="You're all caught up!"
+            emptyMessage="Upload more lectures to receive personalized study recommendations."
+          />
         </div>
 
         {/* Right column — 4 of 12 */}
@@ -62,8 +68,8 @@ export function DashboardPage() {
             gap: 28,
           }}
         >
-          <AiActivity activities={emptyActivity} />
-          <StudyProgress stats={emptyStats} />
+          <RecentUploads uploads={lectures} />
+          <StudyProgress stats={stats} />
         </div>
       </DashboardMainGrid>
     </DashboardGrid>

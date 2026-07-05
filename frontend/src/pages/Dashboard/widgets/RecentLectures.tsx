@@ -6,6 +6,7 @@ export interface Lecture {
   title: string;
   type: 'video' | 'audio' | 'pdf' | 'youtube' | 'text';
   date: string;
+  status?: string;
 }
 
 interface RecentLecturesProps {
@@ -199,12 +200,33 @@ function LectureCard({ lecture }: { lecture: Lecture }) {
         cursor: 'pointer',
         boxShadow: 'var(--np-shadow-card)',
         transition: 'box-shadow 0.2s',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 4,
       }}
     >
-      <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--np-text-primary)' }}>
-        {lecture.title}
-      </p>
-      <p style={{ fontSize: 12, color: 'var(--np-text-muted)', marginTop: 4 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+        <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--np-text-primary)', margin: 0, 
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' 
+        }}>
+          {lecture.title}
+        </p>
+        {lecture.status && (
+          <span style={{ 
+            fontSize: 11, 
+            fontWeight: 600, 
+            padding: '2px 8px', 
+            borderRadius: 12,
+            background: lecture.status === 'uploaded' ? 'var(--np-blue-subtle)' : 'var(--np-surface-elevated)',
+            color: lecture.status === 'uploaded' ? 'var(--np-blue)' : 'var(--np-text-muted)',
+            textTransform: 'capitalize',
+            flexShrink: 0
+          }}>
+            {lecture.status === 'uploaded' ? 'Pending' : lecture.status}
+          </span>
+        )}
+      </div>
+      <p style={{ fontSize: 12, color: 'var(--np-text-muted)', margin: 0 }}>
         {lecture.date}
       </p>
     </div>

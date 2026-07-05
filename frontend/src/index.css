@@ -72,6 +72,28 @@ html, html.dark {
   /* Selection */
   --np-selection-bg:      rgba(59, 130, 246, 0.35);
   --np-selection-text:    #fff;
+
+  /* Educational Content Tokens */
+  --np-edu-definition-bg:       rgba(59, 130, 246, 0.08);
+  --np-edu-definition-border:   var(--np-blue);
+  --np-edu-example-bg:          rgba(139, 92, 246, 0.06);
+  --np-edu-formula-bg:          rgba(6, 182, 212, 0.08);
+  --np-edu-tip-bg:              rgba(245, 158, 11, 0.12);
+  --np-edu-concept-highlight:   rgba(16, 185, 129, 0.10);
+  --np-edu-warning-bg:          rgba(239, 68, 68, 0.10);
+  --np-edu-note-bg:             rgba(59, 130, 246, 0.10);
+
+  /* Reading Spacing System */
+  --np-prose-max-width:         680px;
+  --np-prose-line-height:       1.75;
+  --np-prose-spacing-tight:     0.75rem;
+  --np-prose-spacing-normal:    1.5rem;
+  --np-prose-spacing-generous:  2.5rem;
+
+  /* Micro-interaction Timing */
+  --np-timing-fast:             150ms;
+  --np-timing-normal:           300ms;
+  --np-timing-slow:             500ms;
 }
 
 /* ── Light Theme ──────────────────────────────────────────── */
@@ -141,6 +163,28 @@ html.light {
   /* Selection */
   --np-selection-bg:      rgba(37, 99, 235, 0.20);
   --np-selection-text:    #0F172A;
+
+  /* Educational Content Tokens */
+  --np-edu-definition-bg:       rgba(37, 99, 235, 0.06);
+  --np-edu-definition-border:   var(--np-blue);
+  --np-edu-example-bg:          rgba(124, 58, 237, 0.05);
+  --np-edu-formula-bg:          rgba(8, 145, 178, 0.06);
+  --np-edu-tip-bg:              rgba(217, 119, 6, 0.10);
+  --np-edu-concept-highlight:   rgba(5, 150, 105, 0.08);
+  --np-edu-warning-bg:          rgba(220, 38, 38, 0.08);
+  --np-edu-note-bg:             rgba(37, 99, 235, 0.08);
+
+  /* Reading Spacing System */
+  --np-prose-max-width:         680px;
+  --np-prose-line-height:       1.75;
+  --np-prose-spacing-tight:     0.75rem;
+  --np-prose-spacing-normal:    1.5rem;
+  --np-prose-spacing-generous:  2.5rem;
+
+  /* Micro-interaction Timing */
+  --np-timing-fast:             150ms;
+  --np-timing-normal:           300ms;
+  --np-timing-slow:             500ms;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -339,6 +383,326 @@ html.light {
   /* Prevent child transitions during theme switch on certain elements */
   .no-transition, .no-transition * {
     transition: none !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   EDUCATIONAL CONTENT BLOCK UTILITIES (Task 1.2)
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Educational Content Blocks ─────────────────────────────*/
+.edu-definition {
+  background: var(--np-edu-definition-bg);
+  border-left: 4px solid var(--np-edu-definition-border);
+  padding: 16px 20px;
+  border-radius: 12px;
+  margin: var(--np-prose-spacing-normal) 0;
+  transition: background-color var(--np-timing-normal) ease,
+              border-color var(--np-timing-normal) ease;
+}
+
+.edu-example {
+  background: var(--np-edu-example-bg);
+  border: 1px solid var(--np-border);
+  padding: 20px;
+  border-radius: 12px;
+  margin: var(--np-prose-spacing-normal) 0;
+  transition: background-color var(--np-timing-normal) ease,
+              border-color var(--np-timing-normal) ease;
+}
+
+.edu-formula {
+  background: var(--np-edu-formula-bg);
+  padding: 24px;
+  border-radius: 12px;
+  text-align: center;
+  margin: var(--np-prose-spacing-generous) 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: background-color var(--np-timing-normal) ease,
+              box-shadow var(--np-timing-normal) ease;
+}
+
+.edu-tip {
+  background: var(--np-edu-tip-bg);
+  border-left: 4px solid var(--np-amber);
+  padding: 16px 20px;
+  border-radius: 12px;
+  margin: var(--np-prose-spacing-normal) 0;
+  transition: background-color var(--np-timing-normal) ease;
+}
+
+.edu-warning {
+  background: var(--np-edu-warning-bg);
+  border-left: 4px solid var(--np-edu-warning-border);
+  padding: 16px 20px;
+  border-radius: 12px;
+  margin: var(--np-prose-spacing-normal) 0;
+  transition: background-color var(--np-timing-normal) ease,
+              border-color var(--np-timing-normal) ease;
+}
+
+.edu-note {
+  background: var(--np-edu-note-bg);
+  border-left: 4px solid var(--np-edu-note-border);
+  padding: 16px 20px;
+  border-radius: 12px;
+  margin: var(--np-prose-spacing-normal) 0;
+  transition: background-color var(--np-timing-normal) ease,
+              border-color var(--np-timing-normal) ease;
+}
+
+.edu-concept {
+  background: var(--np-edu-concept-highlight);
+  padding: 14px 18px;
+  border-radius: 8px;
+  margin: var(--np-prose-spacing-tight) 0;
+  border: 1px solid var(--np-border);
+  transition: background-color var(--np-timing-normal) ease,
+              border-color var(--np-timing-normal) ease;
+}
+
+/* Educational Block Titles */
+.edu-block-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--np-text-secondary);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Educational Block Content */
+.edu-block-content {
+  color: var(--np-text-primary);
+  line-height: var(--np-prose-line-height);
+}
+
+.edu-block-content strong {
+  font-weight: 600;
+  color: var(--np-text-primary);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVE BREAKPOINT UTILITIES (Task 1.2)
+   ═══════════════════════════════════════════════════════════ */
+
+/* Mobile first breakpoints - use these for conditional rendering */
+@media (max-width: 639px) {
+  .hide-mobile { display: none !important; }
+  .show-mobile { display: block !important; }
+}
+
+@media (min-width: 640px) {
+  .show-mobile { display: none !important; }
+  .hide-mobile { display: block !important; }
+}
+
+/* Tablet breakpoint */
+@media (max-width: 767px) {
+  .hide-tablet { display: none !important; }
+}
+
+@media (min-width: 768px) {
+  .show-tablet { display: block !important; }
+}
+
+/* Desktop breakpoint - matches study workspace breakpoint */
+@media (max-width: 1023px) {
+  .hide-below-desktop { display: none !important; }
+  .show-below-desktop { display: block !important; }
+}
+
+@media (min-width: 1024px) {
+  .show-desktop { display: block !important; }
+  .hide-desktop { display: none !important; }
+  .show-below-desktop { display: none !important; }
+}
+
+/* Large desktop */
+@media (min-width: 1280px) {
+  .show-large-desktop { display: block !important; }
+}
+
+/* Container max-widths for prose content */
+.prose-container {
+  max-width: var(--np-prose-max-width);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ANIMATION KEYFRAMES (Task 1.2)
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Fade-in Animation ──────────────────────────────────────*/
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Micro-interactions ─────────────────────────────────────*/
+@keyframes subtleScale {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes gentlePulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Progress bar animation */
+@keyframes progressGrow {
+  from {
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+  to {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+}
+
+/* Shimmer effect for loading states */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+/* ── Animation Utility Classes ──────────────────────────────*/
+.animate-fade-in {
+  animation: fadeIn var(--np-timing-normal) ease-out;
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp var(--np-timing-normal) ease-out;
+}
+
+.animate-fade-in-down {
+  animation: fadeInDown var(--np-timing-normal) ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight var(--np-timing-normal) ease-out;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft var(--np-timing-normal) ease-out;
+}
+
+.animate-subtle-scale {
+  animation: subtleScale var(--np-timing-slow) ease-in-out;
+}
+
+.animate-gentle-pulse {
+  animation: gentlePulse 2s ease-in-out infinite;
+}
+
+/* Staggered animation delays for list items */
+.animate-stagger-1 {
+  animation-delay: 100ms;
+}
+
+.animate-stagger-2 {
+  animation-delay: 200ms;
+}
+
+.animate-stagger-3 {
+  animation-delay: 300ms;
+}
+
+.animate-stagger-4 {
+  animation-delay: 400ms;
+}
+
+.animate-stagger-5 {
+  animation-delay: 500ms;
+}
+
+/* Reduced motion support - disable animations for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .animate-fade-in,
+  .animate-fade-in-up,
+  .animate-fade-in-down,
+  .animate-slide-in-right,
+  .animate-slide-in-left,
+  .animate-subtle-scale,
+  .animate-gentle-pulse {
+    animation: none !important;
   }
 }
 

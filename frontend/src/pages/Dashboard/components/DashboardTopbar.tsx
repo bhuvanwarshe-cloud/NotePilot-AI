@@ -14,6 +14,7 @@ export function DashboardTopbar() {
   const displayName = profile?.full_name ?? user?.email?.split('@')[0] ?? 'Student';
   const email = user?.email ?? '';
   const initial = displayName[0]?.toUpperCase() ?? 'S';
+  const avatarUrl = profile?.avatar_url;
 
   const handleLogout = async () => {
     if (loggingOut) return;
@@ -135,11 +136,16 @@ export function DashboardTopbar() {
               fontSize: 13,
               fontWeight: 700,
               transition: 'transform 0.15s',
+              overflow: 'hidden',
             }}
             onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.transform = 'scale(1.08)')}
             onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.transform = 'scale(1)')}
           >
-            {initial}
+            {avatarUrl ? (
+              <img src={avatarUrl} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              initial
+            )}
           </button>
 
           <AnimatePresence>

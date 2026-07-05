@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Educational Block Utilities Test</title>
+  <link rel="stylesheet" href="./index.css">
+  <style>
+    body {
+      padding: 40px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    h2 {
+      margin-top: 40px;
+      margin-bottom: 20px;
+    }
+    .test-section {
+      margin-bottom: 60px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Educational Block Styling Utilities - Test Page</h1>
+  
+  <div class="test-section">
+    <h2>1. Educational Content Blocks</h2>
+    
+    <div class="edu-definition">
+      <div class="edu-block-title">Definition</div>
+      <div class="edu-block-content">
+        <strong>Algorithm:</strong> A step-by-step procedure for solving a problem or accomplishing a task.
+      </div>
+    </div>
+
+    <div class="edu-example">
+      <div class="edu-block-title">Example</div>
+      <div class="edu-block-content">
+        For instance, a bubble sort algorithm compares adjacent elements and swaps them if they are in the wrong order.
+      </div>
+    </div>
+
+    <div class="edu-formula">
+      <div class="edu-block-content">
+        E = mc²
+      </div>
+    </div>
+
+    <div class="edu-tip">
+      <div class="edu-block-title">📚 Exam Tip</div>
+      <div class="edu-block-content">
+        Remember to always check your work and show all calculations for partial credit.
+      </div>
+    </div>
+
+    <div class="edu-warning">
+      <div class="edu-block-title">⚠️ Warning</div>
+      <div class="edu-block-content">
+        Dividing by zero results in an undefined value and will cause runtime errors.
+      </div>
+    </div>
+
+    <div class="edu-note">
+      <div class="edu-block-title">ℹ️ Note</div>
+      <div class="edu-block-content">
+        This concept will be covered in more detail in the next chapter.
+      </div>
+    </div>
+
+    <div class="edu-concept">
+      <div class="edu-block-content">
+        <strong>Key Concept:</strong> Time complexity measures how algorithm performance scales with input size.
+      </div>
+    </div>
+  </div>
+
+  <div class="test-section">
+    <h2>2. Animation Classes</h2>
+    
+    <div class="animate-fade-in" style="background: var(--np-surface); padding: 20px; border-radius: 12px; margin-bottom: 16px;">
+      Fade In Animation
+    </div>
+
+    <div class="animate-fade-in-up animate-stagger-1" style="background: var(--np-surface); padding: 20px; border-radius: 12px; margin-bottom: 16px;">
+      Fade In Up with Stagger 1
+    </div>
+
+    <div class="animate-slide-in-right animate-stagger-2" style="background: var(--np-surface); padding: 20px; border-radius: 12px; margin-bottom: 16px;">
+      Slide In Right with Stagger 2
+    </div>
+
+    <div class="animate-gentle-pulse" style="background: var(--np-surface); padding: 20px; border-radius: 12px; margin-bottom: 16px;">
+      Gentle Pulse (infinite)
+    </div>
+  </div>
+
+  <div class="test-section">
+    <h2>3. Responsive Breakpoint Utilities</h2>
+    
+    <div class="hide-mobile" style="background: var(--np-blue-subtle); padding: 20px; border-radius: 12px; margin-bottom: 16px;">
+      Hidden on Mobile (< 640px)
+    </div>
+
+    <div class="show-mobile" style="background: var(--np-purple-subtle); padding: 20px; border-radius: 12px; margin-bottom: 16px;">
+      Visible on Mobile (< 640px)
+    </div>
+
+    <div class="show-desktop" style="background: var(--np-blue-subtle); padding: 20px; border-radius: 12px; margin-bottom: 16px;">
+      Visible on Desktop (>= 1024px)
+    </div>
+
+    <div class="hide-desktop" style="background: var(--np-purple-subtle); padding: 20px; border-radius: 12px; margin-bottom: 16px;">
+      Hidden on Desktop (>= 1024px)
+    </div>
+  </div>
+
+  <div class="test-section">
+    <h2>4. Prose Container</h2>
+    <div class="prose-container" style="background: var(--np-surface); padding: 40px; border-radius: 12px;">
+      <p>This content is constrained to the prose max-width of 680px for optimal readability. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+    </div>
+  </div>
+
+  <div class="test-section">
+    <h2>5. Theme Toggle Test</h2>
+    <button onclick="toggleTheme()" style="padding: 12px 24px; border-radius: 8px; background: var(--np-blue); color: white; border: none; cursor: pointer;">
+      Toggle Light/Dark Theme
+    </button>
+    <p style="margin-top: 16px; color: var(--np-text-secondary);">
+      Click to test theme transitions on educational blocks
+    </p>
+  </div>
+
+  <script>
+    function toggleTheme() {
+      document.documentElement.classList.toggle('light');
+    }
+  </script>
+</body>
+</html>

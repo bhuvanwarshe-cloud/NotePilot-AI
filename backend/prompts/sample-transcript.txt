@@ -1,0 +1,3 @@
+Lecture Title: Introduction to React Hooks
+
+React hooks allow functional components to use state and lifecycle features without writing class components. The useState hook is used to manage local state inside a component. The useEffect hook is used for side effects such as fetching data or subscribing to events. A dependency array controls when effects run. If the dependency array is empty, the effect runs once after the initial render. If dependencies are provided, the effect runs whenever one of them changes. Important concepts include state updates, re-rendering, and cleanup. In exam contexts, students should be able to explain the difference between useEffect and useLayoutEffect, and why hooks cannot be called conditionally.
