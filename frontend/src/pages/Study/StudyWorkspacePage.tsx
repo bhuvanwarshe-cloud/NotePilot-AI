@@ -61,7 +61,7 @@ export function StudyWorkspacePage() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease: 'easeOut' }}
-        style={{ display: 'grid', ...layoutStyles }}
+        style={{ ...layoutStyles }}
       >
         {(isMobile ? view === 'list' : true) && (
           <div style={{ minWidth: 0 }}>

@@ -1,4 +1,4 @@
-import { ArrowLeft, Search, Clock3, Film, Mic, FileStack, BookOpen, CheckCircle2, Lock } from 'lucide-react';
+import { ArrowLeft, Search, Film, Mic, FileStack, BookOpen, CheckCircle2, Lock } from 'lucide-react';
 import type { StudyNote } from '@/features/study/types';
 
 interface StudySidebarProps {

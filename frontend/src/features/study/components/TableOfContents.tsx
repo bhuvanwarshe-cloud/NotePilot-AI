@@ -3,9 +3,10 @@ import type { TocItem } from '@/features/study/utils/generateTOC';
 
 interface TableOfContentsProps {
   items: TocItem[];
+  activeId?: string | null;
 }
 
-export function TableOfContents({ items }: TableOfContentsProps) {
+export function TableOfContents({ items, activeId }: TableOfContentsProps) {
   if (!items.length) return null;
 
   return (
@@ -15,11 +16,21 @@ export function TableOfContents({ items }: TableOfContentsProps) {
         <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--np-text-primary)', margin: 0 }}>Contents</h3>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {items.map((item) => (
-          <a key={item.id} href={`#${item.id}`} style={{ marginLeft: `${(item.level - 1) * 10}px`, color: 'var(--np-text-secondary)', fontSize: 12, textDecoration: 'none' }}>
-            {item.text}
-          </a>
-        ))}
+        {items.map((item) => {
+          const isActive = activeId === item.id;
+          return (
+            <a key={item.id} href={`#${item.id}`} style={{ 
+              marginLeft: `${(item.level - 1) * 10}px`, 
+              color: isActive ? 'var(--np-blue)' : 'var(--np-text-secondary)', 
+              fontWeight: isActive ? 600 : 400,
+              fontSize: 12, 
+              textDecoration: 'none',
+              transition: 'all 0.2s'
+            }}>
+              {item.text}
+            </a>
+          );
+        })}
       </div>
     </div>
   );

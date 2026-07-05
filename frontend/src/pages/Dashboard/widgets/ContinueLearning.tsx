@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Play, FileText, CheckCircle2, Clock, Film, Mic, FileStack, BookOpen } from 'lucide-react';
+import { Play, CheckCircle2, Clock, Film, Mic, FileStack, BookOpen } from 'lucide-react';
 
 export interface SmartNoteItem {
   id: string;

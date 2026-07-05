@@ -3,9 +3,7 @@ import { DashboardGrid, DashboardMainGrid } from './layouts/DashboardGrid';
 import {
   DashboardHero,
   QuickStats,
-  RecentLectures,
   TodaysFocus,
-  AiActivity,
   StudyProgress,
   ContinueLearning,
   RecentUploads,
@@ -28,7 +26,7 @@ import { useDashboardData } from '@/hooks/useDashboardData';
  *   TodaysFocus
  */
 export function DashboardPage() {
-  const { lectures, activities, recentNotes, lectureCount, noteCount, flashcardCount, stats } = useDashboardData();
+  const { lectures, recentNotes, lectureCount, noteCount, flashcardCount, stats } = useDashboardData();
 
   return (
     <DashboardGrid>

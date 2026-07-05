@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from './useAuth';
-import type { Lecture, Activity, StudyStats } from '@/pages/Dashboard/widgets';
-import type { FocusItem } from '@/pages/Dashboard/widgets';
+import type { Lecture, Activity, StudyStats, SmartNoteItem } from '@/pages/Dashboard/widgets';
+
 
 export function useDashboardData() {
   const { user } = useAuth();
   
   const [lectures, setLectures] = useState<Lecture[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [recentNotes, setRecentNotes] = useState<FocusItem[]>([]);
+  const [recentNotes, setRecentNotes] = useState<SmartNoteItem[]>([]);
   
   const [lectureCount, setLectureCount] = useState(0);
   const [noteCount, setNoteCount] = useState(0);
