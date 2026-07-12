@@ -1,26 +1,31 @@
-import path from 'path';
+/**
+ * youtubeProcessor.ts
+ *
+ * Pure orchestrator for the YouTube transcript pipeline.
+ *
+ * New pipeline (Caption-First):
+ *   1. Validate URL
+ *   2. Quick metadata via oEmbed (immediately updates lecture card — no yt-dlp)
+ *   3. YouTubeTranscriptRouter (CaptionProvider → YtDlpWhisperProvider)
+ *   4. Save Transcript (via TranscriptService — unchanged)
+ *
+ * Error handling:
+ *   - YouTubeBlockedError → status='manual_action_required' (recoverable)
+ *   - Any other error    → status='failed' (unrecoverable)
+ *
+ * The processor knows nothing about how the transcript was extracted.
+ * That detail lives entirely in the router and providers.
+ */
+
 import { SupabaseClient } from '@supabase/supabase-js';
 import { validateYouTubeUrl } from './youtubeValidator';
-import { fetchYouTubeMetadata } from './youtubeMetadata';
-import { downloadAudio, cleanupTempFile } from './youtubeDownloader';
-import { transcribe } from '../../services/transcription/transcription.service';
-import { prepareMediaForTranscription } from '../../services/mediaPreparation.service';
+import { YouTubeOEmbedMetadataProvider } from './providers/youtubeOEmbedMetadataProvider';
+import { extractYouTubeTranscript } from './youtubeTranscriptRouter';
+import { YouTubeBlockedError } from './providers/types';
 import { saveTranscript } from '../../services/transcript/transcript.service';
 import { updateLectureMetadata, updateLectureStatus } from '../../services/lecture.service';
 import { updateAIJobStatus } from '../../services/aiJob.service';
 import { log } from '../../utils/logger';
-
-/**
- * youtubeProcessor.ts
- *
- * Pure orchestrator — no business logic, no SQL.
- * Transcript persistence delegated to TranscriptService.
- *
- * Pipeline:
- *   validate → metadata → download → transcribe → saveTranscript (via service) → cleanup
- */
-
-const TEMP_DIR = path.resolve(__dirname, '../../../temp');
 
 export interface YouTubeProcessorInput {
   url: string;
@@ -29,85 +34,63 @@ export interface YouTubeProcessorInput {
   supabase: SupabaseClient;
 }
 
+const metadataProvider = new YouTubeOEmbedMetadataProvider();
+
 export async function runYouTubeProcessor(input: YouTubeProcessorInput): Promise<void> {
   const { url, lectureId, aiJobId, supabase } = input;
-  let tempFilePath: string | null = null;
   let currentStage = 'init';
 
   log.banner('YouTube Processor Started', {
     'Lecture ID': lectureId,
     'AI Job ID':  aiJobId,
     'URL':        url,
-    'Temp Dir':   TEMP_DIR,
+    'Pipeline':   'Caption-First (oEmbed → CaptionProvider → YtDlpWhisper)',
   });
+
+  /** Helper: update AI job stage + progress in one call */
+  const onStage = async (stage: string, progress: number) => {
+    currentStage = stage;
+    await updateAIJobStatus(supabase, aiJobId, 'processing', stage, progress);
+  };
 
   try {
 
-    // ── Stage 1/5: Validate URL ───────────────────────────────────────────────
-    currentStage = 'validating';
-    log.stage(1, 5, 'Validating URL');
-    await updateAIJobStatus(supabase, aiJobId, 'processing', 'validating', 5);
+    // ── Stage 1: Validate URL ────────────────────────────────────────────────
+    await onStage('validating', 5);
+    log.stage(1, 4, 'Validating URL');
 
     const { videoId } = validateYouTubeUrl(url);
     log.success('YouTubeProcessor', 'URL validated', { 'Video ID': videoId });
 
-    // ── Stage 2/5: Fetch Metadata ─────────────────────────────────────────────
-    currentStage = 'fetching_metadata';
-    log.stage(2, 5, 'Fetching Metadata');
-    await updateAIJobStatus(supabase, aiJobId, 'processing', 'fetching_metadata', 15);
+    // ── Stage 2: Quick metadata (oEmbed — no yt-dlp, no binary) ─────────────
+    // This updates the lecture title + thumbnail immediately so the dashboard
+    // card is never blank while the transcript is being extracted.
+    await onStage('fetching_metadata', 10);
+    log.stage(2, 4, 'Fetching metadata (oEmbed)');
 
-    const metadata = await fetchYouTubeMetadata(url);
-    log.success('YouTubeProcessor', 'Metadata fetched', {
-      'Title':    metadata.title,
-      'Uploader': metadata.uploader,
-      'Duration': `${metadata.durationSeconds}s`,
-    });
+    try {
+      const metadata = await metadataProvider.fetchMetadata(url, videoId);
+      await updateLectureMetadata(supabase, lectureId, {
+        title:        metadata.title,
+        thumbnailUrl: metadata.thumbnailUrl,
+      });
+      log.success('YouTubeProcessor', 'Metadata applied to lecture', {
+        'Title': metadata.title,
+        'Thumb': metadata.thumbnailUrl ? 'yes' : 'no',
+      });
+    } catch (metaErr) {
+      // Non-fatal: if oEmbed fails, the lecture title stays as the user entered.
+      log.warn('YouTubeProcessor', `oEmbed metadata fetch failed (non-fatal): ${metaErr instanceof Error ? metaErr.message : String(metaErr)}`);
+    }
 
-    await updateLectureMetadata(supabase, lectureId, {
-      title:        metadata.title,
-      thumbnailUrl: metadata.thumbnailUrl,
-    });
-    log.success('YouTubeProcessor', 'Lecture metadata updated');
+    // ── Stage 3: Extract transcript (Caption → YtDlpWhisper) ────────────────
+    log.stage(3, 4, 'Extracting transcript (router)');
 
-    // ── Stage 3/5: Download Audio ─────────────────────────────────────────────
-    currentStage = 'downloading_audio';
-    log.stage(3, 5, 'Downloading Audio');
-    await updateAIJobStatus(supabase, aiJobId, 'processing', 'downloading_audio', 30);
+    const transcriptResult = await extractYouTubeTranscript(videoId, url, onStage);
 
-    tempFilePath = await downloadAudio(url, videoId, TEMP_DIR);
-    log.success('YouTubeProcessor', 'Audio downloaded', { 'File': tempFilePath });
-
-    const preparedMedia = await prepareMediaForTranscription(tempFilePath, TEMP_DIR, videoId);
-    tempFilePath = preparedMedia.normalizedPath;
-    log.success('YouTubeProcessor', 'Media preparation complete', {
-      'Normalized path': tempFilePath,
-      'Chunk count': String(preparedMedia.chunkPaths.length),
-      'Chunk duration': `${preparedMedia.chunkLengthSeconds}s`,
-    });
-
-    // ── Stage 4/5: Transcribe ─────────────────────────────────────────────────
-    currentStage = 'transcribing';
-    log.stage(4, 5, 'Transcribing Audio');
-    await updateAIJobStatus(supabase, aiJobId, 'processing', 'transcribing', 55);
-
-    const transcriptResult = await transcribe(tempFilePath);
-    // Override source — GroqProvider defaults to 'audio'; YouTube is different
-    transcriptResult.source = 'youtube';
-    transcriptResult.metadata = {
-      videoId,
-      title:           metadata.title,
-      uploader:        metadata.uploader,
-      durationSeconds: metadata.durationSeconds,
-    };
-    log.success('YouTubeProcessor', 'Transcription complete', {
-      'Language': transcriptResult.language,
-      'Words':    transcriptResult.wordCount,
-    });
-
-    // ── Stage 5/5: Save Transcript (via TranscriptService) ────────────────────
-    currentStage = 'saving_transcript';
-    log.stage(5, 5, 'Saving Transcript');
-    await updateAIJobStatus(supabase, aiJobId, 'processing', 'saving_transcript', 85);
+    // ── Stage 4: Save transcript ─────────────────────────────────────────────
+    await onStage('saving_transcript', 85);
+    log.stage(4, 4, 'Saving Transcript');
 
     const { transcriptId } = await saveTranscript({
       supabase,
@@ -115,33 +98,43 @@ export async function runYouTubeProcessor(input: YouTubeProcessorInput): Promise
       aiJobId,
       result: transcriptResult,
     });
-    log.success('YouTubeProcessor', 'Transcript saved', { 'Transcript ID': transcriptId });
 
     log.banner('YouTube Processor Complete ✓', {
-      'Lecture ID':    lectureId,
-      'Transcript ID': transcriptId,
-      'Language':      transcriptResult.language,
+      'Lecture ID':        lectureId,
+      'Transcript ID':     transcriptId,
+      'Language':          transcriptResult.language,
+      'Transcript source': String(transcriptResult.metadata?.transcriptSource ?? 'unknown'),
+      'Provider':          transcriptResult.provider,
     });
 
-  } catch (error: any) {
-    log.error(
-      'YouTubeProcessor',
-      `Pipeline FAILED at stage: ${currentStage} | Lecture: ${lectureId} | Job: ${aiJobId}`,
-      error
-    );
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
 
-    await updateAIJobStatus(supabase, aiJobId, 'failed', currentStage, 0, error?.message ?? 'Unknown error')
-      .catch((e) => log.error('YouTubeProcessor', 'Could not update ai_job to failed', e));
+    if (error instanceof YouTubeBlockedError) {
+      // ── Recoverable: YouTube bot/challenge block ─────────────────────────
+      log.warn('YouTubeProcessor', `YouTube blocked access — setting manual_action_required. Stage: ${currentStage}. Reason: ${message}`);
 
-    await updateLectureStatus(supabase, lectureId, 'failed')
-      .catch((e) => log.error('YouTubeProcessor', 'Could not update lecture to failed', e));
+      await updateAIJobStatus(
+        supabase, aiJobId,
+        'manual_action_required',
+        'youtube_blocked',
+        0,
+        'YouTube is requiring sign-in to confirm you\'re not a bot. Try a different video or contact support.'
+      ).catch((e) => log.error('YouTubeProcessor', 'Could not update ai_job to manual_action_required', e));
 
-  } finally {
-    log.info('YouTubeProcessor', 'Cleanup');
-    if (tempFilePath) {
-      cleanupTempFile(tempFilePath);
+      // Lecture is marked 'failed' so user sees an error state (recoverable by re-upload)
+      await updateLectureStatus(supabase, lectureId, 'failed')
+        .catch((e) => log.error('YouTubeProcessor', 'Could not update lecture to failed', e));
+
     } else {
-      log.info('YouTubeProcessor', 'No temp file to clean up');
+      // ── Unrecoverable: pipeline error ────────────────────────────────────
+      log.error('YouTubeProcessor', `Pipeline FAILED at stage: ${currentStage}`, error);
+
+      await updateAIJobStatus(supabase, aiJobId, 'failed', currentStage, 0, message)
+        .catch((e) => log.error('YouTubeProcessor', 'Could not update ai_job to failed', e));
+
+      await updateLectureStatus(supabase, lectureId, 'failed')
+        .catch((e) => log.error('YouTubeProcessor', 'Could not update lecture to failed', e));
     }
   }
 }

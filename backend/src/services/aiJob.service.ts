@@ -53,7 +53,7 @@ export async function createAIJob(
 export async function updateAIJobStatus(
   supabase: SupabaseClient,
   jobId: string,
-  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled',
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled' | 'manual_action_required',
   stage: string,
   progress: number = 0,
   errorMessage?: string
