@@ -3,22 +3,36 @@
  *
  * Shared types and interfaces for the YouTube Transcript Provider system.
  *
- * Architecture:
- *   YouTubeTranscriptProvider — URL/videoId → TranscriptResult
- *   YouTubeMetadataProvider   — URL/videoId → YouTubeVideoMetadata
- *
- * These are separate from the audio-file TranscriptionProvider interface
- * which is defined in services/transcription/types.ts.
+ * Key addition: YouTubeVideoContext
+ *   A single canonical object that every provider, router, and metadata service
+ *   receives. Providers never reconstruct URLs or parse video IDs themselves.
+ *   This eliminates inconsistent behaviour from tracking params like ?si=.
  */
 
 import type { TranscriptResult } from '../../../services/transcription/types';
+
+// ── Shared Context ────────────────────────────────────────────────────────────
+
+/**
+ * Canonical representation of a YouTube video.
+ * Built immediately after URL validation and passed through the entire pipeline.
+ *
+ *   originalUrl  — the raw URL the user pasted (may have ?si= or other params)
+ *   canonicalUrl — https://www.youtube.com/watch?v=<videoId>  (clean, no params)
+ *   videoId      — the 11-character video ID extracted by the validator
+ */
+export interface YouTubeVideoContext {
+  readonly videoId: string;
+  readonly canonicalUrl: string;
+  readonly originalUrl: string;
+}
 
 // ── Error Classes ─────────────────────────────────────────────────────────────
 
 /**
  * Thrown when a provider cannot find a transcript (captions not available,
  * auto-generated captions disabled, etc.). This is a SOFT failure — the
- * router will try the next provider.
+ * router will log it and try the next provider.
  */
 export class TranscriptUnavailableError extends Error {
   constructor(
@@ -33,8 +47,9 @@ export class TranscriptUnavailableError extends Error {
 
 /**
  * Thrown when yt-dlp is blocked by YouTube's bot/challenge detection.
- * This is a HARD failure — no further providers can help, and the AI job
- * should be set to 'manual_action_required' rather than 'failed'.
+ * This is a HARD failure — no further providers can help.
+ * The router catches it, records it, and delegates to ManualResolutionProvider.
+ * The processor sets ai_jobs.status = 'failed' with metadata.manualActionRequired = true.
  */
 export class YouTubeBlockedError extends Error {
   constructor(message: string, public readonly details?: string) {
@@ -47,25 +62,17 @@ export class YouTubeBlockedError extends Error {
 
 /**
  * A provider that can extract a transcript from a YouTube video.
- * Each provider is responsible for a specific extraction strategy.
  *
- * On recoverable failure (e.g. captions not available), throws TranscriptUnavailableError.
- * On fatal failure (e.g. bot block), throws YouTubeBlockedError.
- * On unrecoverable error, throws a generic Error.
+ * Receives a YouTubeVideoContext — never reconstructs or parses URLs internally.
+ * On soft failure → throws TranscriptUnavailableError.
+ * On hard block  → throws YouTubeBlockedError.
+ * On other error → throws generic Error (router treats as soft).
  */
 export interface YouTubeTranscriptProvider {
-  /** Human-readable identifier used in logs and metadata */
   readonly name: string;
 
-  /**
-   * Extract a transcript from a YouTube video.
-   * @param videoId  The 11-character YouTube video ID
-   * @param url      The original full URL (some providers need it)
-   * @param onStage  Callback to report progress to the AI job tracker
-   */
   extract(
-    videoId: string,
-    url: string,
+    context: YouTubeVideoContext,
     onStage: (stage: string, progress: number) => Promise<void>
   ): Promise<TranscriptResult>;
 }
@@ -81,9 +88,9 @@ export interface YouTubeVideoMetadata {
 
 /**
  * A provider that can fetch metadata for a YouTube video.
- * Designed for extensibility: oEmbed today, YouTube Data API tomorrow.
+ * Receives a YouTubeVideoContext — always uses canonicalUrl.
  */
 export interface YouTubeMetadataProvider {
   readonly name: string;
-  fetchMetadata(url: string, videoId: string): Promise<YouTubeVideoMetadata>;
+  fetchMetadata(context: YouTubeVideoContext): Promise<YouTubeVideoMetadata>;
 }

@@ -13,6 +13,8 @@ export interface Lecture {
   jobUserMessage?: string;
   /** Machine reason code (e.g. 'youtube_verification_required') */
   jobReason?: string;
+  /** True when the job failed with a recoverable manual action (read from metadata, not status) */
+  jobManualAction?: boolean;
 }
 
 interface RecentLecturesProps {

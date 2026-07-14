@@ -1,31 +1,29 @@
 /**
  * youtubeProcessor.ts
  *
- * Pure orchestrator for the YouTube transcript pipeline.
+ * Orchestrator for the YouTube transcript pipeline.
  *
- * Pipeline (Caption-First, always-recoverable):
- *   1. Validate URL
- *   2. Quick metadata via oEmbed (immediately updates lecture card — no yt-dlp)
- *   3. YouTubeTranscriptRouter → always returns a TranscriptResult, never throws
- *   4a. If result.metadata.manualResolutionRequired === true:
- *         → set ai_jobs.status = 'manual_action_required'
- *         → set lectures.status = 'manual_action_required'
- *         → do NOT call saveTranscript()
- *   4b. Otherwise:
- *         → saveTranscript() (triggers Knowledge Engine)
+ * Pipeline:
+ *   1. Validate URL → build YouTubeVideoContext (canonical URL, no tracking params)
+ *   2. oEmbed metadata → update lecture card (non-fatal if fails)
+ *   3. Transcript router → always returns a result, never throws
+ *   4a. result.metadata.manualActionRequired === true
+ *         → ai_jobs.status = 'failed'
+ *            ai_jobs.metadata includes { manualActionRequired, reason, retryable, recovery, userMessage }
+ *            lectures.status = 'failed'
+ *            saveTranscript() is NOT called
+ *   4b. Normal path → saveTranscript()
  *
- * The processor never catches YouTubeBlockedError — the router now handles it
- * internally and returns a ManualResolutionProvider result instead of throwing.
- *
- * Two terminal states:
- *   completed              — transcript extracted, notes pipeline started
- *   manual_action_required — recoverable; user shown a specific reason + recovery path
+ * Logging at every stage:
+ *   Original URL, Canonical URL, Video ID, Selected Provider,
+ *   Failure Reason, Retryable, Recovery Method
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
-import { validateYouTubeUrl } from './youtubeValidator';
+import { validateYouTubeUrl, buildVideoContext } from './youtubeValidator';
 import { YouTubeOEmbedMetadataProvider } from './providers/youtubeOEmbedMetadataProvider';
 import { extractYouTubeTranscript } from './youtubeTranscriptRouter';
+import type { YouTubeVideoContext } from './providers/types';
 import { saveTranscript } from '../../services/transcript/transcript.service';
 import { updateLectureMetadata, updateLectureStatus } from '../../services/lecture.service';
 import { updateAIJobStatus } from '../../services/aiJob.service';
@@ -43,15 +41,15 @@ const metadataProvider = new YouTubeOEmbedMetadataProvider();
 export async function runYouTubeProcessor(input: YouTubeProcessorInput): Promise<void> {
   const { url, lectureId, aiJobId, supabase } = input;
   let currentStage = 'init';
+  let context: YouTubeVideoContext | null = null;
 
   log.banner('YouTube Processor Started', {
-    'Lecture ID': lectureId,
-    'AI Job ID':  aiJobId,
-    'URL':        url,
-    'Pipeline':   'Caption-First, Always-Recoverable (oEmbed → Router → ManualResolution)',
+    'Lecture ID':   lectureId,
+    'AI Job ID':    aiJobId,
+    'Original URL': url,
+    'Pipeline':     'Caption-First, Always-Recoverable',
   });
 
-  /** Helper: update AI job stage + progress in one call */
   const onStage = async (stage: string, progress: number) => {
     currentStage = stage;
     await updateAIJobStatus(supabase, aiJobId, 'processing', stage, progress);
@@ -59,63 +57,90 @@ export async function runYouTubeProcessor(input: YouTubeProcessorInput): Promise
 
   try {
 
-    // ── Stage 1: Validate URL ────────────────────────────────────────────────
+    // ── Stage 1: Validate + canonicalize URL ─────────────────────────────────
     await onStage('validating', 5);
-    log.stage(1, 4, 'Validating URL');
+    log.stage(1, 4, 'Validating URL + Building Context');
 
     const { videoId } = validateYouTubeUrl(url);
-    log.success('YouTubeProcessor', 'URL validated', { 'Video ID': videoId });
+    context = buildVideoContext(url, videoId) as YouTubeVideoContext;
 
-    // ── Stage 2: Quick metadata (oEmbed — no yt-dlp) ────────────────────────
+    log.success('YouTubeProcessor', 'URL validated and context built', {
+      'Video ID':     context.videoId,
+      'Original URL': context.originalUrl,
+      'Canonical URL': context.canonicalUrl,
+    });
+
+    // ── Stage 2: Quick metadata (oEmbed) ─────────────────────────────────────
     await onStage('fetching_metadata', 10);
-    log.stage(2, 4, 'Fetching metadata (oEmbed)');
+    log.stage(2, 4, 'Fetching metadata (oEmbed — no yt-dlp)');
 
     try {
-      const metadata = await metadataProvider.fetchMetadata(url, videoId);
+      const metadata = await metadataProvider.fetchMetadata(context);
       await updateLectureMetadata(supabase, lectureId, {
         title:        metadata.title,
         thumbnailUrl: metadata.thumbnailUrl,
       });
-      log.success('YouTubeProcessor', 'Metadata applied to lecture', {
+      log.success('YouTubeProcessor', 'Lecture card updated with real metadata', {
         'Title': metadata.title,
         'Thumb': metadata.thumbnailUrl ? 'yes' : 'no',
       });
     } catch (metaErr) {
-      log.warn('YouTubeProcessor', `oEmbed metadata fetch failed (non-fatal): ${metaErr instanceof Error ? metaErr.message : String(metaErr)}`);
+      log.warn(
+        'YouTubeProcessor',
+        `oEmbed metadata fetch failed (non-fatal): ${metaErr instanceof Error ? metaErr.message : String(metaErr)}`
+      );
     }
 
-    // ── Stage 3: Extract transcript — router always returns, never throws ────
-    log.stage(3, 4, 'Extracting transcript (router)');
+    // ── Stage 3: Extract transcript via router ───────────────────────────────
+    log.stage(3, 4, 'Extracting transcript (provider router)');
 
-    const transcriptResult = await extractYouTubeTranscript(videoId, url, onStage);
+    const transcriptResult = await extractYouTubeTranscript(context, onStage);
 
-    // ── Stage 4a: Manual action required (recoverable) ───────────────────────
-    if (transcriptResult.metadata?.manualResolutionRequired === true) {
-      const reason   = String(transcriptResult.metadata.reason   ?? 'unknown');
-      const userMsg  = String(transcriptResult.metadata.userMessage ?? 'Manual resolution required.');
-      const recovery = String(transcriptResult.metadata.recoveryPath ?? 'audio_upload');
+    // ── Stage 4a: Manual action required (recoverable failure) ───────────────
+    if (transcriptResult.metadata?.manualActionRequired === true) {
+      const reason    = String(transcriptResult.metadata.reason   ?? 'unknown');
+      const userMsg   = String(transcriptResult.metadata.userMessage ?? 'Manual resolution required.');
+      const retryable = Boolean(transcriptResult.metadata.retryable ?? true);
+      const recovery  = String(transcriptResult.metadata.recovery   ?? 'audio_upload');
 
       log.warn(
         'YouTubeProcessor',
-        `Manual resolution required for lecture ${lectureId}. Reason: ${reason}. Recovery: ${recovery}`
+        `Manual action required. ` +
+        `Video: ${context.videoId} | Reason: ${reason} | ` +
+        `Retryable: ${retryable} | Recovery: ${recovery}`
       );
 
+      // Store all structured fields in ai_jobs.metadata.
+      // Status stays as 'failed' — within the existing Postgres enum.
+      // The frontend reads metadata.manualActionRequired to render the recovery UI.
       await updateAIJobStatus(
         supabase, aiJobId,
-        'manual_action_required',
-        'manual_action_required',
+        'failed',
+        'manual_action_required', // stage label (a string, not an enum)
         0,
-        userMsg
-      ).catch((e) => log.error('YouTubeProcessor', 'Could not update ai_job to manual_action_required', e));
+        userMsg,
+        {
+          manualActionRequired: true,
+          reason,
+          retryable,
+          recovery,
+          userMessage: userMsg,
+          videoId:     context.videoId,
+          canonicalUrl: context.canonicalUrl,
+        }
+      ).catch((e) => log.error('YouTubeProcessor', 'Could not update ai_job (manual_action_required)', e));
 
       await updateLectureStatus(supabase, lectureId, 'failed')
-        .catch((e) => log.error('YouTubeProcessor', 'Could not update lecture to failed', e));
+        .catch((e) => log.error('YouTubeProcessor', 'Could not update lecture status to failed', e));
 
       log.banner('YouTube Processor — Manual Action Required', {
         'Lecture ID':   lectureId,
+        'Video ID':     context.videoId,
+        'Canonical URL': context.canonicalUrl,
         'Reason':       reason,
+        'Retryable':    retryable,
         'Recovery':     recovery,
-        'User message': userMsg.slice(0, 80) + (userMsg.length > 80 ? '…' : ''),
+        'User message': userMsg.slice(0, 90) + (userMsg.length > 90 ? '…' : ''),
       });
 
       return;
@@ -135,16 +160,17 @@ export async function runYouTubeProcessor(input: YouTubeProcessorInput): Promise
     log.banner('YouTube Processor Complete ✓', {
       'Lecture ID':        lectureId,
       'Transcript ID':     transcriptId,
+      'Video ID':          context?.videoId ?? '(unknown)',
+      'Canonical URL':     context?.canonicalUrl ?? '(unknown)',
       'Language':          transcriptResult.language,
       'Transcript source': String(transcriptResult.metadata?.transcriptSource ?? 'unknown'),
       'Provider':          transcriptResult.provider,
     });
 
   } catch (error: unknown) {
-    // This catch handles only genuine infrastructure errors (e.g. Supabase down,
-    // URL validation failure). Provider-level failures are fully handled by the router.
+    // Only true infrastructure errors reach here (Supabase down, invalid URL, etc.)
     const message = error instanceof Error ? error.message : String(error);
-    log.error('YouTubeProcessor', `Unrecoverable pipeline error at stage: ${currentStage}`, error);
+    log.error('YouTubeProcessor', `Unrecoverable error at stage: ${currentStage}`, error);
 
     await updateAIJobStatus(supabase, aiJobId, 'failed', currentStage, 0, message)
       .catch((e) => log.error('YouTubeProcessor', 'Could not update ai_job to failed', e));

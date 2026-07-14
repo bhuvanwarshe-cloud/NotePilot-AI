@@ -96,6 +96,7 @@ export function useDashboardData() {
             const jobs = Array.isArray(l.ai_jobs) ? l.ai_jobs : [];
             const latestJob = jobs[0] as { status: string; metadata?: Record<string, unknown> } | undefined;
             const jobStatus = latestJob?.status;
+            const jobManualAction = latestJob?.metadata?.manualActionRequired === true;
             const jobUserMessage = typeof latestJob?.metadata?.userMessage === 'string'
               ? latestJob.metadata.userMessage
               : undefined;
@@ -110,6 +111,7 @@ export function useDashboardData() {
               date: new Date(l.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
               status: l.status,
               jobStatus,
+              jobManualAction,
               jobUserMessage,
               jobReason,
             };

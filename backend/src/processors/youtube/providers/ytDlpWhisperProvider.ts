@@ -2,18 +2,8 @@
  * ytDlpWhisperProvider.ts
  *
  * Fallback transcript provider using yt-dlp + ffmpeg + Groq Whisper.
- * All existing download/transcription logic is relocated here — nothing
- * is changed internally, only ownership changes.
- *
- * This is Provider 2/N in the router.
- * On success: returns a TranscriptResult with provider='groq-whisper-...'.
- * On bot block: throws YouTubeBlockedError (fatal — router stops).
- * On other error: throws generic Error.
- *
- * Metadata stored:
- *   transcriptSource    : 'audio_transcription'
- *   transcriptionProvider: 'groq-whisper-large-v3-turbo'
- *   videoId, title, uploader, durationSeconds
+ * Uses context.canonicalUrl exclusively — never the original pasted URL.
+ * This ensures yt-dlp always receives a clean URL without ?si= tracking params.
  */
 
 import path from 'path';
@@ -22,7 +12,7 @@ import { fetchYouTubeMetadata } from '../youtubeMetadata';
 import { downloadAudio, cleanupTempFile, YouTubeDownloadError } from '../youtubeDownloader';
 import { prepareMediaForTranscription } from '../../../services/mediaPreparation.service';
 import { transcribe } from '../../../services/transcription/transcription.service';
-import { YouTubeBlockedError, type YouTubeTranscriptProvider } from './types';
+import { YouTubeBlockedError, type YouTubeTranscriptProvider, type YouTubeVideoContext } from './types';
 import type { TranscriptResult } from '../../../services/transcription/types';
 
 export class YtDlpWhisperProvider implements YouTubeTranscriptProvider {
@@ -31,18 +21,22 @@ export class YtDlpWhisperProvider implements YouTubeTranscriptProvider {
   constructor(private readonly tempDir: string) {}
 
   async extract(
-    videoId: string,
-    url: string,
+    context: YouTubeVideoContext,
     onStage: (stage: string, progress: number) => Promise<void>
   ): Promise<TranscriptResult> {
+    const { videoId, canonicalUrl } = context;
     let tempFilePath: string | null = null;
 
     try {
       // ── Stage: Fetch metadata ───────────────────────────────────────────────
-      log.info(this.name, 'Fetching video metadata via yt-dlp', { 'Video ID': videoId });
+      log.info(this.name, 'Fetching video metadata via yt-dlp', {
+        'Video ID':     videoId,
+        'Canonical URL': canonicalUrl,
+      });
       await onStage('fetching_metadata', 30);
 
-      const metadata = await fetchYouTubeMetadata(url);
+      // Always pass canonicalUrl — clean URL without tracking params
+      const metadata = await fetchYouTubeMetadata(canonicalUrl);
       log.success(this.name, 'Metadata fetched', {
         'Title':    metadata.title,
         'Uploader': metadata.uploader,
@@ -50,13 +44,16 @@ export class YtDlpWhisperProvider implements YouTubeTranscriptProvider {
       });
 
       // ── Stage: Download audio ───────────────────────────────────────────────
-      log.info(this.name, 'Downloading audio via yt-dlp', { 'URL': url });
+      log.info(this.name, 'Downloading audio via yt-dlp', {
+        'Video ID':     videoId,
+        'Canonical URL': canonicalUrl,
+      });
       await onStage('downloading_audio', 45);
 
-      tempFilePath = await downloadAudio(url, videoId, this.tempDir);
+      tempFilePath = await downloadAudio(canonicalUrl, videoId, this.tempDir);
       log.success(this.name, 'Audio downloaded', { 'File': tempFilePath });
 
-      // ── Stage: Prepare (normalize + chunk) ────────────────────────────────
+      // ── Stage: Prepare (normalize) ────────────────────────────────────────
       log.info(this.name, 'Preparing audio for transcription');
       await onStage('preparing_audio', 55);
 
@@ -77,28 +74,25 @@ export class YtDlpWhisperProvider implements YouTubeTranscriptProvider {
         'Words':    transcriptResult.wordCount,
       });
 
-      // ── Build final result ────────────────────────────────────────────────
-      const result: TranscriptResult = {
+      return {
         ...transcriptResult,
         source: 'youtube',
         metadata: {
           transcriptSource:      'audio_transcription',
           transcriptionProvider: transcriptResult.provider,
           videoId,
+          canonicalUrl,
           title:           metadata.title,
           uploader:        metadata.uploader,
           durationSeconds: metadata.durationSeconds,
         },
       };
 
-      return result;
-
     } catch (err: unknown) {
-      // ── Re-classify YouTube bot blocks as YouTubeBlockedError ─────────────
       if (err instanceof YouTubeDownloadError && err.code === 'YOUTUBE_ACCESS_DENIED') {
         log.error(this.name, 'YouTube blocked yt-dlp download (bot challenge)', err);
         throw new YouTubeBlockedError(
-          `YouTube blocked the audio download. The video may require sign-in or is geo-restricted. Details: ${err.message}`,
+          `YouTube blocked the audio download for video ${videoId}. Sign-in or geo-restriction detected. Details: ${err.message}`,
           err.details
         );
       }

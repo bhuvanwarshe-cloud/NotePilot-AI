@@ -53,10 +53,11 @@ export async function createAIJob(
 export async function updateAIJobStatus(
   supabase: SupabaseClient,
   jobId: string,
-  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled' | 'manual_action_required',
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled',
   stage: string,
   progress: number = 0,
-  errorMessage?: string
+  errorMessage?: string,
+  metadataExtras?: Record<string, unknown>
 ) {
   const { data: existingJob, error: fetchError } = await supabase
     .from('ai_jobs')
@@ -68,6 +69,7 @@ export async function updateAIJobStatus(
   const metadataUpdate: Record<string, unknown> = {
     ...existingMetadata,
     stage,
+    ...(metadataExtras ?? {}),
   };
 
   if (errorMessage) metadataUpdate.errorMessage = errorMessage;

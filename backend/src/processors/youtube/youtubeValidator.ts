@@ -60,3 +60,32 @@ export function validateYouTubeUrl(rawUrl: string): YouTubeValidationResult {
 
   return { valid: true, videoId };
 }
+
+/**
+ * Converts any valid YouTube video ID into a clean canonical URL.
+ * Strips all tracking parameters (?si=, &feature=, etc.).
+ *
+ * Example:
+ *   https://youtu.be/wIyHSOugGGw?si=Bf3Qn9mpLNQqDTKh
+ *   → https://www.youtube.com/watch?v=wIyHSOugGGw
+ */
+export function buildCanonicalUrl(videoId: string): string {
+  return `https://www.youtube.com/watch?v=${videoId}`;
+}
+
+/**
+ * Builds a YouTubeVideoContext from the original URL and the extracted videoId.
+ * Import type from providers/types to keep the validator free of deep dependencies.
+ */
+export function buildVideoContext(originalUrl: string, videoId: string): {
+  videoId: string;
+  canonicalUrl: string;
+  originalUrl: string;
+} {
+  return {
+    videoId,
+    canonicalUrl: buildCanonicalUrl(videoId),
+    originalUrl,
+  };
+}
+

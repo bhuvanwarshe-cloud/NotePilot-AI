@@ -1,82 +1,82 @@
 /**
  * manualResolutionProvider.ts
  *
- * Terminal provider — always the last entry in the router's provider chain.
- * Never throws. Never fails. Always returns a structured result.
+ * Terminal provider — always the last in the chain. Never throws, never fails.
  *
- * When all real providers are exhausted, this provider:
- *   1. Records the accumulated errors from previous attempts
- *   2. Determines a specific reason code (youtube_verification_required, captions_unavailable, etc.)
- *   3. Returns a TranscriptResult that signals to the processor that manual resolution is required
+ * Returns a structured TranscriptResult with:
+ *   metadata.manualActionRequired = true   ← processor branches on this flag
+ *   metadata.reason                        ← specific reason code
+ *   metadata.retryable                     ← whether user can retry
+ *   metadata.recovery                      ← suggested recovery path
+ *   metadata.userMessage                   ← user-facing explanation
  *
- * The processor detects `metadata.manualResolutionRequired === true` and:
- *   - Sets ai_jobs.status = 'manual_action_required'
- *   - Sets lectures.status = 'manual_action_required'
- *   - Does NOT call saveTranscript()
- *   - Stores the reason + user message in ai_jobs.metadata
- *
- * This design guarantees the pipeline never crashes on provider exhaustion.
- * Every YouTube upload ends in one of two terminal states: completed or manual_action_required.
+ * The processor stores these fields in ai_jobs.metadata and sets
+ * ai_jobs.status = 'failed' (not 'manual_action_required') to stay within the
+ * existing Postgres enum. The frontend differentiates this case by reading
+ * ai_jobs.metadata.manualActionRequired instead of ai_jobs.status.
  */
 
 import { log } from '../../../utils/logger';
 import type { TranscriptResult } from '../../../services/transcription/types';
-import type { YouTubeTranscriptProvider } from './types';
+import type { YouTubeTranscriptProvider, YouTubeVideoContext } from './types';
 
 export type ManualResolutionReason =
-  | 'youtube_verification_required'   // yt-dlp blocked by bot challenge
-  | 'captions_unavailable'            // video has no public captions
-  | 'video_private'                   // video is private / removed
-  | 'all_providers_failed';           // fallback when no specific reason detected
+  | 'youtube_verification_required'
+  | 'captions_unavailable'
+  | 'video_private'
+  | 'all_providers_failed';
 
 interface ManualResolutionProviderOptions {
-  /** Errors accumulated from all previous providers */
   accumulatedErrors: string[];
-  /** Specific reason code — determined by the router based on error types */
   reason: ManualResolutionReason;
 }
 
-/** User-facing message by reason code */
 const USER_MESSAGES: Record<ManualResolutionReason, string> = {
   youtube_verification_required:
-    'YouTube restricted access to this video from our servers and no public captions were available. ' +
-    'You can still study this lecture by downloading the audio (if you have permission) and uploading it directly to NotePilot.',
+    "YouTube restricted access to this video from our servers and no public captions were available. " +
+    "You can still study this lecture by downloading the audio (if you have permission) and uploading it directly to NotePilot.",
   captions_unavailable:
-    'This video has no public captions and the audio download was also unavailable. ' +
-    'You can still study this lecture by downloading the audio and uploading it directly to NotePilot.',
+    "This video has no public captions and the audio download was also unavailable. " +
+    "You can still study this lecture by downloading the audio and uploading it directly to NotePilot.",
   video_private:
-    'This video is private or has been removed and cannot be accessed. ' +
-    'Please check that the link is correct and the video is publicly available.',
+    "This video is private or has been removed and cannot be accessed. " +
+    "Please check that the link is correct and the video is publicly available.",
   all_providers_failed:
-    'We were unable to extract a transcript from this video through any available method. ' +
-    'You can still study this lecture by downloading the audio and uploading it directly to NotePilot.',
+    "We were unable to extract a transcript from this video through any available method. " +
+    "You can still study this lecture by downloading the audio and uploading it directly to NotePilot.",
 };
 
 export class ManualResolutionProvider implements YouTubeTranscriptProvider {
   readonly name = 'ManualResolutionProvider';
 
-  private readonly accumulatedErrors: string[];
-  private readonly reason: ManualResolutionReason;
-
-  constructor(opts: ManualResolutionProviderOptions) {
-    this.accumulatedErrors = opts.accumulatedErrors;
-    this.reason = opts.reason;
-  }
+  constructor(private readonly opts: ManualResolutionProviderOptions) {}
 
   async extract(
-    videoId: string,
-    _url: string,
+    context: YouTubeVideoContext,
     onStage: (stage: string, progress: number) => Promise<void>
   ): Promise<TranscriptResult> {
+    const { videoId, canonicalUrl, originalUrl } = context;
+    const { reason, accumulatedErrors } = this.opts;
 
-    await onStage('manual_action_required', 0);
+    // Use 'awaiting_manual_action' as the stage string (stage is just a label,
+    // not constrained by the DB enum — only ai_jobs.status is enum-constrained)
+    await onStage('awaiting_manual_action', 0);
 
     log.warn(
       this.name,
-      `All providers exhausted for video ${videoId}. Setting manual_action_required. Reason: ${this.reason}`
+      `All providers exhausted for video ${videoId}. Reason: ${reason}. ` +
+      `Retryable: true. Recovery: audio_upload`
     );
 
-    const userMessage = USER_MESSAGES[this.reason];
+    log.info(this.name, 'Manual action context', {
+      'Video ID':     videoId,
+      'Canonical URL': canonicalUrl,
+      'Original URL':  originalUrl,
+      'Reason':        reason,
+      'Retryable':     'true',
+      'Recovery':      'audio_upload',
+      'Errors':        accumulatedErrors.join(' | '),
+    });
 
     return {
       text: '',
@@ -88,21 +88,22 @@ export class ManualResolutionProvider implements YouTubeTranscriptProvider {
       source: 'youtube',
       provider: 'manual_resolution',
       metadata: {
-        // Sentinel flag — processor checks this to branch into the manual path
-        manualResolutionRequired: true,
-        reason: this.reason,
-        userMessage,
-        recoveryPath: 'audio_upload',
-        providerErrors: this.accumulatedErrors,
+        // Sentinel: processor checks this flag to branch into the manual path
+        manualActionRequired: true,
+        reason,
+        retryable: true,
+        recovery: 'audio_upload',
+        userMessage: USER_MESSAGES[reason],
+        providerErrors: accumulatedErrors,
         videoId,
+        canonicalUrl,
       },
     };
   }
 }
 
 /**
- * Determine a specific ManualResolutionReason from accumulated error strings.
- * Returns the most informative reason found; falls back to 'all_providers_failed'.
+ * Classify a list of accumulated error strings into the most specific reason code.
  */
 export function classifyManualReason(errors: string[]): ManualResolutionReason {
   const combined = errors.join(' ').toLowerCase();
@@ -113,7 +114,8 @@ export function classifyManualReason(errors: string[]): ManualResolutionReason {
     combined.includes('challenge') ||
     combined.includes('captcha') ||
     combined.includes('access_denied') ||
-    combined.includes('youtube_access_denied')
+    combined.includes('youtube_access_denied') ||
+    combined.includes('[blocked]')
   ) {
     return 'youtube_verification_required';
   }
@@ -121,7 +123,6 @@ export function classifyManualReason(errors: string[]): ManualResolutionReason {
   if (
     combined.includes('private') ||
     combined.includes('removed') ||
-    combined.includes('unavailable') ||
     combined.includes('does not exist')
   ) {
     return 'video_private';

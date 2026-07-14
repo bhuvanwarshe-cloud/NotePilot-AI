@@ -22,8 +22,9 @@ export function RecentUploads({ uploads }: RecentUploadsProps) {
   };
 
   const getStatusDisplay = (upload: Lecture) => {
-    // AI job status takes priority for workflow states like manual_action_required
-    if (upload.jobStatus === 'manual_action_required') {
+    // AI job metadata takes priority: manualActionRequired is stored in metadata,
+    // not in status (which stays 'failed' to remain within the Postgres enum).
+    if (upload.jobManualAction === true) {
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--np-yellow, #F59E0B)', fontSize: 12, fontWeight: 500 }}>
