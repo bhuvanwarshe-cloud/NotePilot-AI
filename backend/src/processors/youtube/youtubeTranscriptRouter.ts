@@ -3,16 +3,20 @@
  *
  * Orchestrates the ordered list of YouTube transcript providers.
  * The processor knows nothing about providers — it calls extractYouTubeTranscript()
- * and receives a TranscriptResult.
+ * and always receives a TranscriptResult (never throws on exhaustion).
  *
  * Provider execution model:
  *   - Providers are tried in order.
- *   - TranscriptUnavailableError → soft failure: log and try next provider.
- *   - YouTubeBlockedError → hard failure: propagate immediately (no next provider).
- *   - All providers exhausted → throw generic Error.
+ *   - TranscriptUnavailableError → soft failure: record error, try next provider.
+ *   - YouTubeBlockedError → hard failure: record error, skip remaining providers.
+ *   - Any unexpected error → treat as soft failure: record, try next provider.
+ *   - All providers exhausted → ManualResolutionProvider runs as terminal, always succeeds.
  *
- * To add a new provider in the future:
- *   providers.push(new DeepgramProvider());  // done.
+ * The terminal ManualResolutionProvider guarantees the pipeline always ends
+ * in one of two states: completed or manual_action_required. It never crashes.
+ *
+ * To add a new provider:
+ *   Add it inside buildProviders() before ManualResolutionProvider. Done.
  *
  * Logging format: "Provider N/M: <name>" for easy production debugging.
  */
@@ -21,6 +25,7 @@ import path from 'path';
 import { log } from '../../utils/logger';
 import { YouTubeCaptionProvider } from './providers/youtubeCaptionProvider';
 import { YtDlpWhisperProvider } from './providers/ytDlpWhisperProvider';
+import { ManualResolutionProvider, classifyManualReason } from './providers/manualResolutionProvider';
 import { TranscriptUnavailableError, YouTubeBlockedError } from './providers/types';
 import type { YouTubeTranscriptProvider } from './providers/types';
 import type { TranscriptResult } from '../../services/transcription/types';
@@ -29,20 +34,26 @@ const TEMP_DIR = path.resolve(__dirname, '../../../temp');
 
 /**
  * Build the ordered provider list.
- * This is the single place to add, remove, or reorder providers.
+ * ManualResolutionProvider is always last — it is constructed at exhaustion time
+ * with the accumulated errors, so it is NOT included in this list.
+ *
+ * Add future providers here:
+ *   new InnerTubeCaptionProvider(),
+ *   new DeepgramYouTubeProvider(),
  */
 function buildProviders(): YouTubeTranscriptProvider[] {
   return [
-    new YouTubeCaptionProvider(),       // 1. Free, instant, no binary
+    new YouTubeCaptionProvider(),       // 1. Free, instant — public captions
     new YtDlpWhisperProvider(TEMP_DIR), // 2. yt-dlp + ffmpeg + Groq Whisper
-    // Future:
-    // new DeepgramYouTubeProvider(),
-    // new AssemblyAIProvider(),
   ];
 }
 
 /**
  * Extract a transcript from a YouTube video using the best available provider.
+ *
+ * Always returns a TranscriptResult. Never throws.
+ * If all real providers fail, returns a ManualResolutionProvider result where
+ *   result.metadata.manualResolutionRequired === true.
  *
  * @param videoId    Validated 11-char YouTube video ID
  * @param url        Original YouTube URL
@@ -56,8 +67,12 @@ export async function extractYouTubeTranscript(
   const providers = buildProviders();
   const total = providers.length;
   const errors: string[] = [];
+  let hardBlocked = false;
 
   for (let i = 0; i < providers.length; i++) {
+    // If YouTube hard-blocked a previous provider, skip remaining real providers.
+    if (hardBlocked) break;
+
     const provider = providers[i];
     const position = `${i + 1}/${total}`;
     const attemptStart = Date.now();
@@ -71,10 +86,10 @@ export async function extractYouTubeTranscript(
       const durationMs = Date.now() - attemptStart;
 
       log.success('TranscriptRouter', `Provider ${position}: ${provider.name} — SUCCESS`, {
-        'Video ID':   videoId,
-        'Words':      result.wordCount,
-        'Language':   result.language,
-        'Duration ms': durationMs,
+        'Video ID':          videoId,
+        'Words':             result.wordCount,
+        'Language':          result.language,
+        'Duration ms':       durationMs,
         'Transcript source': String(result.metadata?.transcriptSource ?? 'unknown'),
       });
 
@@ -82,40 +97,49 @@ export async function extractYouTubeTranscript(
 
     } catch (err: unknown) {
 
+      const durationMs = Date.now() - attemptStart;
+
       if (err instanceof YouTubeBlockedError) {
-        // Hard failure — propagate immediately; no point trying other providers.
-        log.error(
+        // Hard failure — record and break; ManualResolutionProvider will run next.
+        log.warn(
           'TranscriptRouter',
-          `Provider ${position}: ${provider.name} — HARD FAIL (YouTube blocked): ${err.message}`,
-          err
+          `Provider ${position}: ${provider.name} — HARD FAIL (YouTube blocked, ${durationMs}ms): ${err.message}`
         );
-        throw err;
+        errors.push(`[${provider.name}][BLOCKED] ${err.message}`);
+        hardBlocked = true;
+        break;
       }
 
       if (err instanceof TranscriptUnavailableError) {
-        // Soft failure — log and continue to next provider.
-        const durationMs = Date.now() - attemptStart;
-        log.warn('TranscriptRouter', `Provider ${position}: ${provider.name} — unavailable (${durationMs}ms), reason: ${err.message}`);
+        // Soft failure — continue to next provider.
+        log.warn(
+          'TranscriptRouter',
+          `Provider ${position}: ${provider.name} — unavailable (${durationMs}ms): ${err.message}`
+        );
         errors.push(`[${provider.name}] ${err.message}`);
         continue;
       }
 
-      // Unexpected error — treat as soft failure and continue.
+      // Unexpected error — treat as soft, continue.
       const msg = err instanceof Error ? err.message : String(err);
-      const durationMs = Date.now() - attemptStart;
-      log.warn('TranscriptRouter', `Provider ${position}: ${provider.name} — unexpected error (${durationMs}ms): ${msg}`);
-      errors.push(`[${provider.name}] ${msg}`);
+      log.warn(
+        'TranscriptRouter',
+        `Provider ${position}: ${provider.name} — unexpected error (${durationMs}ms): ${msg}`
+      );
+      errors.push(`[${provider.name}][UNEXPECTED] ${msg}`);
       continue;
     }
   }
 
-  // All providers exhausted.
-  const summary = errors.join(' | ');
-  log.error('TranscriptRouter', 'All providers exhausted — no transcript could be extracted', {
-    'Video ID': videoId,
-    'Attempts': total,
-    'Errors':   summary,
-  });
+  // ── All providers exhausted (or hard-blocked) ─────────────────────────────
+  // Run the terminal ManualResolutionProvider. It always succeeds.
+  const reason = classifyManualReason(errors);
 
-  throw new Error(`No transcript provider succeeded for video ${videoId}. Attempted ${total} providers. Errors: ${summary}`);
+  log.warn(
+    'TranscriptRouter',
+    `All ${total} provider(s) exhausted for video ${videoId}. Reason: ${reason}. Delegating to ManualResolutionProvider.`
+  );
+
+  const terminal = new ManualResolutionProvider({ accumulatedErrors: errors, reason });
+  return terminal.extract(videoId, url, onStage);
 }
