@@ -108,8 +108,8 @@ export async function runYouTubeProcessor(input: YouTubeProcessorInput): Promise
         userMsg
       ).catch((e) => log.error('YouTubeProcessor', 'Could not update ai_job to manual_action_required', e));
 
-      await updateLectureStatus(supabase, lectureId, 'manual_action_required')
-        .catch((e) => log.error('YouTubeProcessor', 'Could not update lecture to manual_action_required', e));
+      await updateLectureStatus(supabase, lectureId, 'failed')
+        .catch((e) => log.error('YouTubeProcessor', 'Could not update lecture to failed', e));
 
       log.banner('YouTube Processor — Manual Action Required', {
         'Lecture ID':   lectureId,

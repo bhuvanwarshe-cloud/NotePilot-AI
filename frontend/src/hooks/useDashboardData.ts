@@ -3,7 +3,6 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from './useAuth';
 import type { Lecture, Activity, StudyStats, SmartNoteItem } from '@/pages/Dashboard/widgets';
 
-
 export function useDashboardData() {
   const { user } = useAuth();
   
@@ -31,7 +30,12 @@ export function useDashboardData() {
       try {
         const { data: lecturesData } = await supabase
           .from('lectures')
-          .select('id, title, type, status, created_at')
+          .select(`
+            id, title, type, status, created_at,
+            ai_jobs (
+              id, status, metadata
+            )
+          `)
           .eq('user_id', user!.id)
           .order('created_at', { ascending: false })
           .limit(4);
@@ -80,13 +84,36 @@ export function useDashboardData() {
         if (!mounted) return;
 
         setLectures(
-          (lecturesData || []).map((l: { id: string; title: string; type: string; created_at: string; status?: string }) => ({
-            id: l.id,
-            title: l.title,
-            type: l.type as 'audio' | 'video' | 'text' | 'pdf' | 'youtube',
-            date: new Date(l.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
-            status: l.status,
-          }))
+          (lecturesData || []).map((l: {
+            id: string;
+            title: string;
+            type: string;
+            created_at: string;
+            status?: string;
+            ai_jobs?: Array<{ id: string; status: string; metadata?: Record<string, unknown> }>;
+          }) => {
+            // Find the most recent transcription job for this lecture
+            const jobs = Array.isArray(l.ai_jobs) ? l.ai_jobs : [];
+            const latestJob = jobs[0] as { status: string; metadata?: Record<string, unknown> } | undefined;
+            const jobStatus = latestJob?.status;
+            const jobUserMessage = typeof latestJob?.metadata?.userMessage === 'string'
+              ? latestJob.metadata.userMessage
+              : undefined;
+            const jobReason = typeof latestJob?.metadata?.reason === 'string'
+              ? latestJob.metadata.reason
+              : undefined;
+
+            return {
+              id: l.id,
+              title: l.title,
+              type: l.type as 'audio' | 'video' | 'text' | 'pdf' | 'youtube',
+              date: new Date(l.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
+              status: l.status,
+              jobStatus,
+              jobUserMessage,
+              jobReason,
+            };
+          })
         );
 
         setRecentNotes(

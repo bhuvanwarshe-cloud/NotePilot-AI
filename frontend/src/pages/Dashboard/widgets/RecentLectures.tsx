@@ -7,6 +7,12 @@ export interface Lecture {
   type: 'video' | 'audio' | 'pdf' | 'youtube' | 'text';
   date: string;
   status?: string;
+  /** Status of the most recent AI job for this lecture */
+  jobStatus?: string;
+  /** User-facing recovery message from the AI job (e.g. YouTube restriction) */
+  jobUserMessage?: string;
+  /** Machine reason code (e.g. 'youtube_verification_required') */
+  jobReason?: string;
 }
 
 interface RecentLecturesProps {

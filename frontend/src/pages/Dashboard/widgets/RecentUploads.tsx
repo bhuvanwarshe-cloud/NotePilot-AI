@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
-import { UploadCloud, FileAudio, FileVideo, FileText, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
+import { UploadCloud, FileAudio, FileVideo, FileText, CheckCircle2, Loader2, AlertCircle, Upload } from 'lucide-react';
 import type { Lecture } from './RecentLectures';
+import { Link } from 'react-router-dom';
 
 interface RecentUploadsProps {
   uploads: Lecture[];
@@ -20,8 +21,48 @@ export function RecentUploads({ uploads }: RecentUploadsProps) {
     }
   };
 
-  const getStatusDisplay = (status?: string) => {
-    switch (status) {
+  const getStatusDisplay = (upload: Lecture) => {
+    // AI job status takes priority for workflow states like manual_action_required
+    if (upload.jobStatus === 'manual_action_required') {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--np-yellow, #F59E0B)', fontSize: 12, fontWeight: 500 }}>
+            <AlertCircle size={12} />
+            Access restricted
+          </div>
+          {upload.jobUserMessage && (
+            <p style={{
+              margin: 0,
+              fontSize: 11,
+              color: 'var(--np-text-secondary)',
+              lineHeight: 1.5,
+              maxWidth: 340,
+            }}>
+              {upload.jobUserMessage}
+            </p>
+          )}
+          <Link
+            to="/upload"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
+              fontSize: 11,
+              fontWeight: 600,
+              color: 'var(--np-blue)',
+              textDecoration: 'none',
+              marginTop: 2,
+            }}
+          >
+            <Upload size={10} />
+            Upload audio instead
+          </Link>
+        </div>
+      );
+    }
+
+    // Lecture lifecycle states
+    switch (upload.status) {
       case 'uploaded':
       case 'processing':
         return (
@@ -48,7 +89,7 @@ export function RecentUploads({ uploads }: RecentUploadsProps) {
         return (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--np-error)', fontSize: 12, fontWeight: 500 }}>
             <AlertCircle size={12} />
-            Failed
+            Processing failed
           </div>
         );
       default:
@@ -106,7 +147,7 @@ export function RecentUploads({ uploads }: RecentUploadsProps) {
                 }}>
                   {upload.title || 'Untitled Upload'}
                 </p>
-                {getStatusDisplay(upload.status)}
+                {getStatusDisplay(upload)}
               </div>
             </div>
             
