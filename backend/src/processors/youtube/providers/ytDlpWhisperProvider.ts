@@ -88,17 +88,36 @@ export class YtDlpWhisperProvider implements YouTubeTranscriptProvider {
         },
       };
 
-    } catch (err: unknown) {
-      if (err instanceof YouTubeDownloadError && err.code === 'YOUTUBE_ACCESS_DENIED') {
-        log.error(this.name, 'YouTube blocked yt-dlp download (bot challenge)', err);
-        throw new YouTubeBlockedError(
-          `YouTube blocked the audio download for video ${videoId}. Sign-in or geo-restriction detected. Details: ${err.message}`,
-          err.details
-        );
-      }
-      throw err;
+   } catch (err: unknown) {
 
-    } finally {
+  if (err instanceof YouTubeDownloadError) {
+
+    if (err.code === 'YOUTUBE_ACCESS_DENIED') {
+
+      log.error(
+        this.name,
+        'YouTube blocked yt-dlp access',
+        err
+      );
+
+      throw new YouTubeBlockedError(
+        `YouTube blocked server-side access for video ${videoId}. ` +
+        `The video may require authentication or YouTube may be challenging the server IP.`,
+        err.details
+      );
+    }
+
+    log.warn(
+      this.name,
+      `yt-dlp operation failed: ${err.code} — ${err.message}`
+    );
+
+    throw err;
+  }
+
+  throw err;
+
+} finally {
       if (tempFilePath) {
         log.info(this.name, 'Cleaning up temp file', { 'File': path.basename(tempFilePath) });
         cleanupTempFile(tempFilePath);
