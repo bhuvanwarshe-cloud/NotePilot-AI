@@ -7,13 +7,15 @@
     "dev": "nodemon --exec ts-node src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:gemini-youtube": "tsx scripts/test-gemini-youtube.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@google/genai": "^2.12.0",
     "@supabase/supabase-js": "^2.108.2",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
@@ -24,7 +26,8 @@
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.2.0",
     "youtube-dl-exec": "^3.1.8",
-    "youtube-transcript-plus": "^2.0.0"
+    "youtube-transcript-plus": "^2.0.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
@@ -34,6 +37,7 @@
     "@types/node": "^26.0.1",
     "nodemon": "^3.1.14",
     "ts-node": "^10.9.2",
+    "tsx": "^4.23.1",
     "typescript": "^6.0.3"
   }
 }
