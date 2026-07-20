@@ -1,66 +1,164 @@
-import { Request, Response } from 'express';
+import {
+  Request,
+  Response,
+} from 'express';
+
 import path from 'path';
+
 import fs from 'fs';
 
-import { sendSuccess, sendError } from '../utils/response.util';
-import { getSupabaseClient } from '../config/supabase';
-import { processUpload } from '../services/upload.service';
-import { acquireTranscript } from '../acquisition/transcriptAcquisitionEngine';
-import { log } from '../utils/logger';
+
+import {
+  sendSuccess,
+  sendError,
+} from '../utils/response.util';
+
+import {
+  getSupabaseClient,
+} from '../config/supabase';
+
+import {
+  processUpload,
+} from '../services/upload.service';
+
+import {
+  acquireTranscript,
+} from '../acquisition/transcriptAcquisitionEngine';
+
+import {
+  runYouTubeSourceUnderstandingJob,
+} from '../services/sourceUnderstanding/youtubeSourceUnderstanding.job';
+
+import {
+  log,
+} from '../utils/logger';
 
 
-const TEMP_DIR = path.resolve(__dirname, '../../temp');
+// ─────────────────────────────────────────────────────────────────────────────
+// Temp Directory
+// ─────────────────────────────────────────────────────────────────────────────
+
+const TEMP_DIR =
+  path.resolve(
+    __dirname,
+    '../../temp'
+  );
 
 
-/**
- * Maps each frontend source type to the processor key stored in ai_jobs.
- *
- * NOTE:
- * These values are currently persisted as job metadata.
- * Actual runtime transcript acquisition is now routed through TAE
- * (TranscriptAcquisitionEngine).
- */
-const processorMap: Record<string, string> = {
-  audio:       'audioProcessor',
-  video:       'videoProcessor',
-  pdf:         'pdfProcessor',
-  textbook:    'ocrProcessor',
-  handwritten: 'ocrProcessor',
-  youtube:     'youtubeProcessor',
-  text:        'textProcessor',
+// ─────────────────────────────────────────────────────────────────────────────
+// Processor Metadata
+//
+// These values are currently persisted into ai_jobs metadata.
+//
+// IMPORTANT:
+//
+// "youtubeProcessor" here is historical metadata only.
+//
+// YouTube runtime execution no longer goes through the legacy
+// transcript-first youtubeProcessor.
+//
+// YouTube now uses:
+//
+// SourceUnderstandingService
+//      ↓
+// GeminiYouTubeProvider
+//      ↓
+// Canonical KnowledgeRepresentation
+//
+// We can rename this metadata key later without mixing that migration into
+// the production pipeline switch.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const processorMap:
+  Record<string, string> =
+{
+
+  audio:
+    'audioProcessor',
+
+  video:
+    'videoProcessor',
+
+  pdf:
+    'pdfProcessor',
+
+  textbook:
+    'ocrProcessor',
+
+  handwritten:
+    'ocrProcessor',
+
+  youtube:
+    'youtubeProcessor',
+
+  text:
+    'textProcessor',
+
 };
 
 
-/**
- * Describes how each source enters the backend.
- */
-const inputTypeMap: Record<string, string> = {
-  audio:       'file',
-  video:       'file',
-  pdf:         'file',
-  textbook:    'file',
-  handwritten: 'file',
-  youtube:     'url',
-  text:        'text',
+// ─────────────────────────────────────────────────────────────────────────────
+// Input Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+const inputTypeMap:
+  Record<string, string> =
+{
+
+  audio:
+    'file',
+
+  video:
+    'file',
+
+  pdf:
+    'file',
+
+  textbook:
+    'file',
+
+  handwritten:
+    'file',
+
+  youtube:
+    'url',
+
+  text:
+    'text',
+
 };
 
 
-export async function uploadLecture(req: Request, res: Response) {
+// ─────────────────────────────────────────────────────────────────────────────
+// Upload Controller
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function uploadLecture(
+  req: Request,
+  res: Response
+) {
+
   try {
 
     // ─────────────────────────────────────────────────────────────────────────
     // 1. Authenticate user
     // ─────────────────────────────────────────────────────────────────────────
 
-    const userId = req.user?.id;
+    const userId =
+      req.user?.id;
 
-    if (!userId) {
+
+    if (
+      !userId
+    ) {
+
       return sendError(
         res,
         null,
         'User ID not found in request',
         401
       );
+
     }
 
 
@@ -68,19 +166,48 @@ export async function uploadLecture(req: Request, res: Response) {
     // 2. Extract request input
     // ─────────────────────────────────────────────────────────────────────────
 
-    const { source, title, url, text } = req.body;
+    const {
 
-    let file: Express.Multer.File | undefined;
+      source,
 
-    if (req.file) {
-      file = req.file;
+      title,
+
+      url,
+
+      text,
+
+    } =
+      req.body;
+
+
+    let file:
+      Express.Multer.File |
+      undefined;
+
+
+    if (
+      req.file
+    ) {
+
+      file =
+        req.file;
 
     } else if (
+
       req.files &&
-      Array.isArray(req.files) &&
-      req.files.length > 0
+
+      Array.isArray(
+        req.files
+      ) &&
+
+      req.files.length >
+        0
+
     ) {
-      file = req.files[0];
+
+      file =
+        req.files[0];
+
     }
 
 
@@ -88,28 +215,37 @@ export async function uploadLecture(req: Request, res: Response) {
     // 3. Log incoming request
     // ─────────────────────────────────────────────────────────────────────────
 
-    log.banner('Upload Request Received', {
-      'User ID': userId,
+    log.banner(
+      'Upload Request Received',
+      {
 
-      'Source':
-        source ?? '(none)',
+        'User ID':
+          userId,
 
-      'Title':
-        title ?? '(none)',
+        'Source':
+          source ??
+          '(none)',
 
-      'URL':
-        url ?? '(none)',
+        'Title':
+          title ??
+          '(none)',
 
-      'Text len':
-        text
-          ? `${(text as string).length} chars`
-          : '(none)',
+        'URL':
+          url ??
+          '(none)',
 
-      'File':
-        file
-          ? `${file.originalname} (${(file.size / 1024).toFixed(1)} KB, ${file.mimetype})`
-          : '(none)',
-    });
+        'Text len':
+          text
+            ? `${(text as string).length} chars`
+            : '(none)',
+
+        'File':
+          file
+            ? `${file.originalname} (${(file.size / 1024).toFixed(1)} KB, ${file.mimetype})`
+            : '(none)',
+
+      }
+    );
 
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -117,30 +253,46 @@ export async function uploadLecture(req: Request, res: Response) {
     // ─────────────────────────────────────────────────────────────────────────
 
     const processorKey =
-      processorMap[source as string] || 'unknown';
+      processorMap[
+        source as string
+      ] ||
+      'unknown';
+
 
     const inputType =
-      inputTypeMap[source as string] || 'unknown';
+      inputTypeMap[
+        source as string
+      ] ||
+      'unknown';
 
 
     // ─────────────────────────────────────────────────────────────────────────
     // 5. Create authenticated Supabase client
+    //
+    // This client carries the logged-in user's JWT.
+    //
+    // Therefore downstream persistence obeys RLS:
+    //
+    // auth.uid() = user_id
     // ─────────────────────────────────────────────────────────────────────────
 
-    const supabase = getSupabaseClient(req.token);
+    const supabase =
+      getSupabaseClient(
+        req.token
+      );
 
 
     // ─────────────────────────────────────────────────────────────────────────
     // 6. Register upload
     //
-    // processUpload is responsible for:
+    // processUpload:
     //
-    // - Storage upload
-    // - Lecture creation
-    // - Lecture file creation
-    // - AI job creation
+    // - uploads file when applicable
+    // - creates lecture
+    // - creates lecture_file
+    // - creates ai_job
     //
-    // It does NOT perform transcript acquisition.
+    // It does NOT perform source processing.
     // ─────────────────────────────────────────────────────────────────────────
 
     log.info(
@@ -148,96 +300,171 @@ export async function uploadLecture(req: Request, res: Response) {
       'Creating lecture & AI job rows via upload transaction'
     );
 
-    const result = await processUpload(
-      supabase,
-      userId,
-      title as string,
-      source as string,
-      processorKey,
-      inputType,
-      file,
-      text as string | undefined,
-      url as string | undefined
-    );
+
+    const result =
+      await processUpload(
+
+        supabase,
+
+        userId,
+
+        title as string,
+
+        source as string,
+
+        processorKey,
+
+        inputType,
+
+        file,
+
+        text as
+          string |
+          undefined,
+
+        url as
+          string |
+          undefined
+
+      );
 
 
     log.success(
       'UploadController',
       'Lecture and AI Job created',
       {
-        'Lecture ID': result.lectureId,
-        'AI Job ID': result.aiJobId,
-        'Source': result.source,
+
+        'Lecture ID':
+          result.lectureId,
+
+        'AI Job ID':
+          result.aiJobId,
+
+        'Source':
+          result.source,
+
       }
     );
 
 
     // ─────────────────────────────────────────────────────────────────────────
-    // 7. Start Transcript Acquisition Engine (TAE)
+    // 7A. YouTube — Direct Source Understanding
     //
-    // The controller no longer directly calls source-specific processors.
+    // IMPORTANT ARCHITECTURAL CHANGE:
     //
-    // Instead:
+    // YouTube no longer enters TranscriptAcquisitionEngine.
     //
-    // Controller
-    //      ↓
-    // TranscriptAcquisitionEngine
-    //      ↓
-    // Source-specific processor
+    // OLD:
     //
-    // This allows future sources such as:
+    // YouTube
+    //   ↓
+    // TAE
+    //   ↓
+    // captions
+    //   ↓
+    // yt-dlp
+    //   ↓
+    // Whisper
     //
-    // video
-    // PDF
-    // text
-    // OCR
     //
-    // to be added without coupling the controller directly to their processors.
+    // NEW:
+    //
+    // YouTube
+    //   ↓
+    // Source Understanding
+    //   ↓
+    // Gemini multimodal
+    //   ↓
+    // Canonical KnowledgeRepresentation
+    //   ↓
+    // persistence
+    //
+    // No transcript is required for this path.
     // ─────────────────────────────────────────────────────────────────────────
 
+    if (
 
-    // ── YouTube Acquisition ──────────────────────────────────────────────────
+      source ===
+        'youtube' &&
 
-    if (source === 'youtube' && url) {
+      url
+
+    ) {
 
       log.info(
         'UploadController',
-        'Starting transcript acquisition for YouTube source'
+        'Starting direct source understanding for YouTube'
       );
 
-      acquireTranscript({
-        source: 'youtube',
 
-        url: url as string,
+      runYouTubeSourceUnderstandingJob({
 
-        lectureId: result.lectureId,
-        aiJobId: result.aiJobId,
+        url:
+          url as string,
+
+        lectureId:
+          result.lectureId,
+
+        aiJobId:
+          result.aiJobId,
+
+        userId,
 
         supabase,
-      }).catch((err) => {
 
-        /*
-         * Safety net.
-         *
-         * The processor itself handles normal acquisition failures
-         * and updates ai_jobs / lecture status.
-         *
-         * This catch protects against unexpected unhandled errors.
-         */
-
-        log.error(
-          'UploadController',
-          'Unhandled transcript acquisition error (YouTube)',
+      }).catch(
+        (
           err
-        );
+        ) => {
 
-      });
+          /*
+           * Safety net only.
+           *
+           * The production job already:
+           *
+           * - catches normal failures
+           * - logs them
+           * - marks ai_job failed
+           *
+           * This prevents an unhandled promise rejection.
+           */
+
+          log.error(
+            'UploadController',
+            'Unhandled YouTube source understanding error',
+            err
+          );
+
+        }
+      );
+
     }
 
 
-    // ── Audio Acquisition ────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────────
+    // 7B. Audio — Transcript Acquisition Engine
+    //
+    // Audio architecture remains unchanged.
+    //
+    // Audio
+    //    ↓
+    // TAE
+    //    ↓
+    // audioProcessor
+    //    ↓
+    // transcription
+    //
+    // We intentionally do NOT modify the working audio pipeline in Phase 3.3.
+    // ─────────────────────────────────────────────────────────────────────────
 
-    if (source === 'audio' && file) {
+    if (
+
+      source ===
+        'audio' &&
+
+      file
+
+    ) {
 
       log.info(
         'UploadController',
@@ -248,36 +475,43 @@ export async function uploadLecture(req: Request, res: Response) {
       /*
        * Multer currently uses memory storage.
        *
-       * The audio processor expects a physical file path because
-       * Groq transcription uses fs.createReadStream().
-       *
-       * Therefore the uploaded buffer must temporarily be written
-       * to disk before TAE starts the audio acquisition pipeline.
-       *
-       * We will move this preparation responsibility out of the
-       * controller in a later TAE refactor.
+       * The audio processor expects a physical path because the transcription
+       * provider uses fs.createReadStream().
        */
 
       const tempFileName =
         `${result.lectureId}-${file.originalname}`;
 
+
       const tempFilePath =
-        path.join(TEMP_DIR, tempFileName);
+        path.join(
+          TEMP_DIR,
+          tempFileName
+        );
 
 
-      // Ensure temp directory exists
+      // Ensure temp directory exists.
 
-      if (!fs.existsSync(TEMP_DIR)) {
+      if (
+        !fs.existsSync(
+          TEMP_DIR
+        )
+      ) {
 
         fs.mkdirSync(
           TEMP_DIR,
-          { recursive: true }
+          {
+
+            recursive:
+              true,
+
+          }
         );
 
       }
 
 
-      // Write Multer memory buffer to temporary file
+      // Write Multer memory buffer to temporary file.
 
       fs.writeFileSync(
         tempFilePath,
@@ -289,34 +523,51 @@ export async function uploadLecture(req: Request, res: Response) {
         'UploadController',
         'Audio buffer written to temp',
         {
-          'Path': tempFilePath,
+
+          'Path':
+            tempFilePath,
+
         }
       );
 
 
-      // Start TAE
+      // Start Transcript Acquisition Engine.
 
       acquireTranscript({
-        source: 'audio',
 
-        filePath: tempFilePath,
-        fileName: file.originalname,
-        mimeType: file.mimetype,
+        source:
+          'audio',
 
-        lectureId: result.lectureId,
-        aiJobId: result.aiJobId,
+        filePath:
+          tempFilePath,
+
+        fileName:
+          file.originalname,
+
+        mimeType:
+          file.mimetype,
+
+        lectureId:
+          result.lectureId,
+
+        aiJobId:
+          result.aiJobId,
 
         supabase,
 
-      }).catch((err) => {
-
-        log.error(
-          'UploadController',
-          'Unhandled transcript acquisition error (Audio)',
+      }).catch(
+        (
           err
-        );
+        ) => {
 
-      });
+          log.error(
+            'UploadController',
+            'Unhandled transcript acquisition error (Audio)',
+            err
+          );
+
+        }
+      );
 
     }
 
@@ -324,15 +575,23 @@ export async function uploadLecture(req: Request, res: Response) {
     // ─────────────────────────────────────────────────────────────────────────
     // 8. Return immediately
     //
-    // Transcript acquisition runs asynchronously in the background.
+    // Both processing architectures are asynchronous:
     //
-    // The frontend receives the lecture + AI job IDs immediately and can
-    // observe processing progress through the existing job/status system.
+    // YouTube → Source Understanding
+    // Audio   → Transcript Acquisition
+    //
+    // The frontend receives lectureId + aiJobId immediately.
     // ─────────────────────────────────────────────────────────────────────────
+
+    const processingMode =
+      source === 'youtube'
+        ? 'source understanding'
+        : 'transcript acquisition';
+
 
     log.success(
       'UploadController',
-      'Returning 201 to client — transcript acquisition started'
+      `Returning 201 to client — ${processingMode} started`
     );
 
 
@@ -344,7 +603,9 @@ export async function uploadLecture(req: Request, res: Response) {
     );
 
 
-  } catch (error) {
+  } catch (
+    error
+  ) {
 
     // ─────────────────────────────────────────────────────────────────────────
     // Request-level failure
@@ -364,4 +625,5 @@ export async function uploadLecture(req: Request, res: Response) {
     );
 
   }
+
 }
