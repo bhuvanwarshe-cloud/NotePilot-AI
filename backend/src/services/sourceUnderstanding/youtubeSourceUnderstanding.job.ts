@@ -3,7 +3,7 @@
  *
  * Production orchestration layer for YouTube source understanding.
  *
- * Responsibility:
+ * Pipeline:
  *
  * YouTube URL
  *      ↓
@@ -17,22 +17,20 @@
  *      ↓
  * persist canonical KR
  *      ↓
- * update AI job lifecycle
+ * Knowledge Engine
+ *      ↓
+ * generate Smart Notes FROM KR
+ *      ↓
+ * persist notes
+ *      ↓
+ * complete AI job
  *
  * IMPORTANT:
  *
- * This file intentionally sits ABOVE sourceUnderstanding.service.ts.
+ * Gemini understands the original YouTube source only ONCE.
  *
- * sourceUnderstanding.service.ts remains pure:
- *
- * SOURCE → CANONICAL KNOWLEDGE
- *
- * This job layer owns production concerns:
- *
- * - ai_jobs lifecycle
- * - persistence
- * - logging
- * - production failure handling
+ * Smart Notes generation consumes the already-created canonical
+ * KnowledgeRepresentation. It does not re-fetch or re-process YouTube.
  */
 
 import type {
@@ -46,6 +44,10 @@ import {
 import {
   saveKnowledgeRepresentation,
 } from '../knowledgeRepresentation/knowledgeRepresentation.service';
+
+import {
+  generateNotesFromKnowledgeRepresentation,
+} from '../knowledge/knowledge.service';
 
 import {
   updateAIJobStatus,
@@ -233,6 +235,23 @@ export async function runYouTubeSourceUnderstandingJob(
     Date.now();
 
 
+  /*
+   * Track completed stages so failure logs and ai_jobs metadata can tell us
+   * exactly how far the pipeline progressed.
+   */
+
+  let knowledgeRepresentationId:
+    string | null =
+    null;
+
+  let noteId:
+    string | null =
+    null;
+
+  let currentStage =
+    'initializing';
+
+
   log.banner(
     'YouTube Source Understanding Job Started',
     {
@@ -255,6 +274,10 @@ export async function runYouTubeSourceUnderstandingJob(
     // ─────────────────────────────────────────────────────────────────────────
     // Stage 1 — Validate + canonicalize
     // ─────────────────────────────────────────────────────────────────────────
+
+    currentStage =
+      'validating';
+
 
     await updateAIJobStatus(
       supabase,
@@ -296,7 +319,15 @@ export async function runYouTubeSourceUnderstandingJob(
     // This is expected to be the longest-running stage.
     //
     // Gemini performs direct multimodal understanding of the YouTube source.
+    //
+    // IMPORTANT:
+    //
+    // This is the ONLY stage where the original YouTube source is understood.
     // ─────────────────────────────────────────────────────────────────────────
+
+    currentStage =
+      'understanding_source';
+
 
     await updateAIJobStatus(
       supabase,
@@ -368,15 +399,19 @@ export async function runYouTubeSourceUnderstandingJob(
 
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Stage 3 — Persist Canonical KR
+    // Stage 3 — Persist Canonical KnowledgeRepresentation
     // ─────────────────────────────────────────────────────────────────────────
+
+    currentStage =
+      'saving_knowledge';
+
 
     await updateAIJobStatus(
       supabase,
       aiJobId,
       'processing',
       'saving_knowledge',
-      90,
+      80,
       undefined,
       {
 
@@ -414,21 +449,141 @@ export async function runYouTubeSourceUnderstandingJob(
       });
 
 
+    knowledgeRepresentationId =
+      persisted.id;
+
+
     log.success(
       'YouTubeSourceUnderstandingJob',
       'Canonical KnowledgeRepresentation persisted',
       {
 
         'Knowledge Representation ID':
-          persisted.id,
+          knowledgeRepresentationId,
 
       }
     );
 
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Stage 4 — Complete AI job
+    // Stage 4 — Generate Smart Notes FROM Canonical KR
+    //
+    // This is the bridge introduced in Phase 3.4.
+    //
+    // IMPORTANT:
+    //
+    // We pass understanding.knowledge directly.
+    //
+    // We do NOT:
+    //
+    // - send the YouTube URL back into source understanding
+    // - download the video
+    // - generate another transcript
+    // - regenerate the KR
+    //
+    // The Knowledge Engine transforms the existing KR into student-facing
+    // Smart Notes and persists them into the existing "notes" table.
     // ─────────────────────────────────────────────────────────────────────────
+
+    currentStage =
+      'notes_generation';
+
+
+    await updateAIJobStatus(
+      supabase,
+      aiJobId,
+      'processing',
+      'notes_generation',
+      85,
+      undefined,
+      {
+
+        pipeline:
+          'youtube_knowledge_to_notes',
+
+        knowledgeRepresentationId,
+
+        videoId,
+
+        canonicalUrl,
+
+      }
+    );
+
+
+    log.info(
+      'YouTubeSourceUnderstandingJob',
+      'Starting Smart Notes generation from canonical knowledge',
+      {
+
+        'Lecture ID':
+          lectureId,
+
+        'Knowledge Representation ID':
+          knowledgeRepresentationId,
+
+        'Topics':
+          understanding.knowledge.topics.length,
+
+        'Concepts':
+          understanding.knowledge.concepts.length,
+
+      }
+    );
+
+
+    const notesResult =
+      await generateNotesFromKnowledgeRepresentation({
+
+        supabase,
+
+        lectureId,
+
+        aiJobId,
+
+        knowledge:
+          understanding.knowledge,
+
+      });
+
+
+    noteId =
+      notesResult.noteId;
+
+
+    log.success(
+      'YouTubeSourceUnderstandingJob',
+      'Smart Notes generated and persisted',
+      {
+
+        'Lecture ID':
+          lectureId,
+
+        'Note ID':
+          noteId,
+
+        'Knowledge Representation ID':
+          knowledgeRepresentationId,
+
+      }
+    );
+
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Stage 5 — Complete AI job
+    //
+    // Only the outer orchestration layer marks the complete YouTube pipeline
+    // as finished.
+    //
+    // At this point BOTH durable outputs exist:
+    //
+    // 1. knowledge_representations row
+    // 2. notes row
+    // ─────────────────────────────────────────────────────────────────────────
+
+    currentStage =
+      'done';
+
 
     const totalProcessingTimeMs =
       Date.now() -
@@ -445,10 +600,11 @@ export async function runYouTubeSourceUnderstandingJob(
       {
 
         pipeline:
-          'direct_source_understanding',
+          'youtube_source_understanding_to_smart_notes',
 
-        knowledgeRepresentationId:
-          persisted.id,
+        knowledgeRepresentationId,
+
+        noteId,
 
         videoId,
 
@@ -480,7 +636,7 @@ export async function runYouTubeSourceUnderstandingJob(
 
     log.success(
       'YouTubeSourceUnderstandingJob',
-      'YouTube source understanding completed',
+      'YouTube source understanding and Smart Notes generation completed',
       {
 
         'Lecture ID':
@@ -490,7 +646,10 @@ export async function runYouTubeSourceUnderstandingJob(
           aiJobId,
 
         'KR ID':
-          persisted.id,
+          knowledgeRepresentationId,
+
+        'Note ID':
+          noteId,
 
         'Duration':
           `${totalProcessingTimeMs}ms`,
@@ -505,6 +664,14 @@ export async function runYouTubeSourceUnderstandingJob(
 
     // ─────────────────────────────────────────────────────────────────────────
     // Failure handling
+    //
+    // A useful property of this architecture:
+    //
+    // If KR persistence succeeds but Smart Notes generation fails,
+    // the persisted KR remains available.
+    //
+    // We do NOT rerun Gemini source understanding automatically here.
+    // A future retry mechanism can regenerate notes directly from the stored KR.
     // ─────────────────────────────────────────────────────────────────────────
 
     const message =
@@ -515,36 +682,53 @@ export async function runYouTubeSourceUnderstandingJob(
 
     log.error(
       'YouTubeSourceUnderstandingJob',
-      'YouTube source understanding failed',
+      `YouTube pipeline failed at stage: ${currentStage}`,
       error
     );
 
+
+    /*
+     * knowledge.service.ts may already mark the job failed when notes
+     * generation itself throws.
+     *
+     * This outer update is still useful because it records orchestration-level
+     * context including the persisted KR ID and exact failed stage.
+     */
 
     await updateAIJobStatus(
       supabase,
       aiJobId,
       'failed',
-      'source_understanding_failed',
+      currentStage,
       0,
       message,
       {
 
         pipeline:
-          'direct_source_understanding',
+          'youtube_source_understanding_to_smart_notes',
+
+        failedStage:
+          currentStage,
+
+        knowledgeRepresentationId,
+
+        noteId,
+
+        knowledgePersisted:
+          knowledgeRepresentationId !== null,
+
+        notesPersisted:
+          noteId !== null,
 
         failedAt:
           new Date().toISOString(),
 
+        elapsedMs:
+          Date.now() - startedAt,
+
       }
     );
 
-
-    /*
-     * Re-throw so the controller's fire-and-forget safety catch can log
-     * unexpected background failures.
-     *
-     * The AI job has already been marked failed above.
-     */
 
     throw error;
 
