@@ -32,6 +32,13 @@
  * Smart Notes generation consumes the already-created canonical
  * KnowledgeRepresentation. It does not re-fetch or re-process YouTube.
  */
+import {
+  resolveYouTubeMetadata,
+} from './youtubeMetadata.resolver';
+
+import {
+  enrichLectureMetadata,
+} from '../lectureMetadata.service';
 
 import type {
   SupabaseClient,
@@ -397,7 +404,149 @@ export async function runYouTubeSourceUnderstandingJob(
       }
     );
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Stage 2.5 — Enrich lecture metadata
+//
+// At upload time, the lecture is created before source understanding finishes.
+//
+// For YouTube uploads, that means the initial lecture may contain:
+//
+// title:
+//   raw YouTube URL
+//
+// thumbnail:
+//   null
+//
+// Now that source understanding has completed, we have:
+//
+// - a meaningful educational title from the canonical KR
+// - a validated YouTube video ID
+// - a deterministic thumbnail URL
+//
+// Metadata enrichment is intentionally NON-FATAL.
+//
+// If this stage fails, we still continue with:
+//
+// - KR persistence
+// - Smart Notes generation
+//
+// A cosmetic metadata failure must never discard an expensive successful
+// Gemini source-understanding result.
+// ─────────────────────────────────────────────────────────────────────────────
 
+try {
+
+  const youtubeMetadata =
+    resolveYouTubeMetadata(
+      videoId
+    );
+
+
+  log.info(
+    'YouTubeSourceUnderstandingJob',
+    'Enriching lecture with resolved YouTube metadata',
+    {
+
+      'Lecture ID':
+        lectureId,
+
+      'Title':
+        understanding.knowledge.title,
+
+      'Thumbnail':
+        youtubeMetadata.thumbnailUrl,
+
+    }
+  );
+
+
+  await enrichLectureMetadata({
+
+    supabase,
+
+    lectureId,
+
+    title:
+      understanding.knowledge.title,
+
+    thumbnailUrl:
+      youtubeMetadata.thumbnailUrl,
+
+    metadata: {
+
+      youtube: {
+
+        videoId:
+          youtubeMetadata.videoId,
+
+        canonicalUrl:
+          youtubeMetadata.canonicalUrl,
+
+        thumbnailUrl:
+          youtubeMetadata.thumbnailUrl,
+
+      },
+
+      language:
+        understanding.knowledge.language,
+
+      sourceUnderstanding: {
+
+        provider:
+          understanding.metadata.provider,
+
+        model:
+          understanding.metadata.model,
+
+        schemaVersion:
+          understanding.knowledge.schemaVersion,
+
+      },
+
+    },
+
+  });
+
+
+  log.success(
+    'YouTubeSourceUnderstandingJob',
+    'Lecture metadata enriched',
+    {
+
+      'Lecture ID':
+        lectureId,
+
+      'Title':
+        understanding.knowledge.title,
+
+      'Thumbnail':
+        youtubeMetadata.thumbnailUrl,
+
+    }
+  );
+
+
+} catch (
+  metadataError: unknown
+) {
+
+  /*
+   * NON-FATAL.
+   *
+   * Do not rethrow.
+   *
+   * Source understanding already succeeded. We should still persist the
+   * canonical KR and generate Smart Notes even if lecture metadata enrichment
+   * fails.
+   */
+
+  log.error(
+    'YouTubeSourceUnderstandingJob',
+    'Lecture metadata enrichment failed — continuing pipeline',
+    metadataError
+  );
+
+}
     // ─────────────────────────────────────────────────────────────────────────
     // Stage 3 — Persist Canonical KnowledgeRepresentation
     // ─────────────────────────────────────────────────────────────────────────
