@@ -1,3 +1,13 @@
+/**
+ * lectures.repository.ts
+ *
+ * Repository helpers for the lectures table.
+ *
+ * Phase 3.5:
+ * Supports post-processing enrichment of lecture metadata after
+ * source understanding has completed.
+ */
+
 import type {
   SupabaseClient,
 } from '@supabase/supabase-js';
@@ -11,13 +21,19 @@ import {
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
 
-export interface LectureMetadataUpdate {
+export interface UpdateLectureMetadataInput {
 
-  title?: string;
+  title?:
+    string;
 
-  thumbnailUrl?: string | null;
+  thumbnailUrl?:
+    string;
 
-  metadata?: Record<string, unknown>;
+  language?:
+    string;
+
+  metadata?:
+    Record<string, unknown>;
 
 }
 
@@ -27,138 +43,22 @@ export interface LectureMetadataUpdate {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Updates metadata discovered after initial lecture creation.
+ * Enriches an existing lecture after source understanding.
  *
- * Typical lifecycle:
+ * Supports:
  *
- * Upload
- *   ↓
- * lecture row created with provisional information
- *   ↓
- * source understanding
- *   ↓
- * better metadata discovered
- *   ↓
- * updateLectureMetadata()
+ * - AI-resolved title
+ * - source thumbnail
+ * - detected language
+ * - extensible JSON metadata
  *
- * This repository function contains no YouTube-specific logic.
+ * Existing JSON metadata is preserved and merged with incoming metadata.
  */
 export async function updateLectureMetadata(
   supabase: SupabaseClient,
   lectureId: string,
-  update: LectureMetadataUpdate
+  input: UpdateLectureMetadataInput
 ): Promise<void> {
-
-  const payload:
-    Record<string, unknown> =
-    {};
-
-
-  // ───────────────────────────────────────────────────────────────────────────
-  // Title
-  // ───────────────────────────────────────────────────────────────────────────
-
-  if (
-    typeof update.title === 'string' &&
-    update.title.trim().length > 0
-  ) {
-
-    payload.title =
-      update.title.trim();
-
-  }
-
-
-  // ───────────────────────────────────────────────────────────────────────────
-  // Thumbnail
-  // ───────────────────────────────────────────────────────────────────────────
-
-  if (
-    update.thumbnailUrl !== undefined
-  ) {
-
-    payload.thumbnail_url =
-      update.thumbnailUrl;
-
-  }
-
-
-  // ───────────────────────────────────────────────────────────────────────────
-  // Metadata
-  //
-  // IMPORTANT:
-  //
-  // We merge with existing metadata rather than blindly replacing it.
-  // ───────────────────────────────────────────────────────────────────────────
-
-  if (
-    update.metadata !== undefined
-  ) {
-
-    const {
-      data: existingLecture,
-      error: fetchError,
-    } =
-      await supabase
-        .from('lectures')
-        .select('metadata')
-        .eq('id', lectureId)
-        .single();
-
-
-    if (
-      fetchError
-    ) {
-
-      throw new Error(
-        `Failed to load existing lecture metadata: ${fetchError.message}`
-      );
-
-    }
-
-
-    const existingMetadata =
-      (
-        existingLecture?.metadata &&
-        typeof existingLecture.metadata === 'object' &&
-        !Array.isArray(existingLecture.metadata)
-      )
-        ? existingLecture.metadata as Record<string, unknown>
-        : {};
-
-
-    payload.metadata = {
-
-      ...existingMetadata,
-
-      ...update.metadata,
-
-    };
-
-  }
-
-
-  // ───────────────────────────────────────────────────────────────────────────
-  // Nothing to update
-  // ───────────────────────────────────────────────────────────────────────────
-
-  if (
-    Object.keys(payload).length === 0
-  ) {
-
-    log.info(
-      'LecturesRepo',
-      'Lecture metadata update skipped — no fields supplied',
-      {
-        'Lecture ID':
-          lectureId,
-      }
-    );
-
-    return;
-
-  }
-
 
   log.info(
     'LecturesRepo',
@@ -169,13 +69,17 @@ export async function updateLectureMetadata(
         lectureId,
 
       'Title':
-        typeof payload.title === 'string'
-          ? payload.title
-          : '(unchanged)',
+        input.title ?? '(unchanged)',
 
       'Thumbnail':
-        payload.thumbnail_url !== undefined
-          ? String(payload.thumbnail_url)
+        input.thumbnailUrl ?? '(unchanged)',
+
+      'Language':
+        input.language ?? '(unchanged)',
+
+      'Metadata':
+        input.metadata
+          ? 'provided'
           : '(unchanged)',
 
     }
@@ -183,7 +87,114 @@ export async function updateLectureMetadata(
 
 
   // ───────────────────────────────────────────────────────────────────────────
-  // Persist
+  // 1. Load existing metadata
+  //
+  // We preserve existing metadata instead of blindly replacing it.
+  // ───────────────────────────────────────────────────────────────────────────
+
+  let existingMetadata:
+    Record<string, unknown> =
+    {};
+
+
+  if (
+    input.metadata !== undefined
+  ) {
+
+    const {
+      data,
+      error,
+    } =
+      await supabase
+        .from('lectures')
+        .select('metadata')
+        .eq('id', lectureId)
+        .single();
+
+
+    if (error) {
+
+      throw new Error(
+        `Failed to load existing lecture metadata: ${error.message}`
+      );
+
+    }
+
+
+    if (
+      data?.metadata &&
+      typeof data.metadata === 'object' &&
+      !Array.isArray(data.metadata)
+    ) {
+
+      existingMetadata =
+        data.metadata as Record<string, unknown>;
+
+    }
+
+  }
+
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // 2. Build partial update
+  // ───────────────────────────────────────────────────────────────────────────
+
+  const updates:
+    Record<string, unknown> =
+    {};
+
+
+  if (
+    input.title !== undefined
+  ) {
+
+    updates.title =
+      input.title;
+
+  }
+
+
+  if (
+    input.thumbnailUrl !== undefined
+  ) {
+
+    updates.thumbnail_url =
+      input.thumbnailUrl;
+
+  }
+
+
+  if (
+    input.language !== undefined
+  ) {
+
+    updates.language =
+      input.language;
+
+  }
+
+
+  if (
+    input.metadata !== undefined
+  ) {
+
+    updates.metadata = {
+
+      ...existingMetadata,
+
+      ...input.metadata,
+
+    };
+
+  }
+
+
+  updates.updated_at =
+    new Date().toISOString();
+
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // 3. Persist
   // ───────────────────────────────────────────────────────────────────────────
 
   const {
@@ -191,13 +202,11 @@ export async function updateLectureMetadata(
   } =
     await supabase
       .from('lectures')
-      .update(payload)
+      .update(updates)
       .eq('id', lectureId);
 
 
-  if (
-    error
-  ) {
+  if (error) {
 
     throw new Error(
       `Failed to update lecture metadata: ${error.message}`

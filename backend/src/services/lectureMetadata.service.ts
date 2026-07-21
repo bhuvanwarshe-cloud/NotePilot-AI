@@ -1,3 +1,32 @@
+/**
+ * lectureMetadata.service.ts
+ *
+ * Phase 3.5 — Lecture Metadata Enrichment
+ *
+ * Responsible for enriching an already-created lecture after
+ * source understanding provides better information.
+ *
+ * Examples:
+ *
+ * YouTube:
+ *
+ * raw URL title
+ *      ↓
+ * AI-understood title
+ *
+ * no thumbnail
+ *      ↓
+ * deterministic YouTube thumbnail
+ *
+ * unknown language
+ *      ↓
+ * detected source language
+ *
+ * source-specific information
+ *      ↓
+ * extensible metadata JSON
+ */
+
 import type {
   SupabaseClient,
 } from '@supabase/supabase-js';
@@ -12,54 +41,39 @@ import {
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Types
+// Input
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface EnrichLectureMetadataInput {
 
-  supabase: SupabaseClient;
+  supabase:
+    SupabaseClient;
 
-  lectureId: string;
+  lectureId:
+    string;
 
-  title?: string;
+  title?:
+    string;
 
-  thumbnailUrl?: string | null;
+  thumbnailUrl?:
+    string;
 
-  metadata?: Record<string, unknown>;
+  language?:
+    string;
+
+  metadata?:
+    Record<string, unknown>;
 
 }
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Lecture Metadata Service
+// Service
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Production boundary for enriching an existing lecture after more accurate
- * information becomes available.
- *
- * Provider/source-specific code should call this service rather than updating
- * the lectures table directly.
- */
 export async function enrichLectureMetadata(
   input: EnrichLectureMetadataInput
 ): Promise<void> {
-
-  const {
-
-    supabase,
-
-    lectureId,
-
-    title,
-
-    thumbnailUrl,
-
-    metadata,
-
-  } =
-    input;
-
 
   log.info(
     'LectureMetadataService',
@@ -67,20 +81,25 @@ export async function enrichLectureMetadata(
     {
 
       'Lecture ID':
-        lectureId,
+        input.lectureId,
 
       'Has title':
-        title
+        input.title
           ? 'yes'
           : 'no',
 
       'Has thumbnail':
-        thumbnailUrl
+        input.thumbnailUrl
+          ? 'yes'
+          : 'no',
+
+      'Has language':
+        input.language
           ? 'yes'
           : 'no',
 
       'Has metadata':
-        metadata
+        input.metadata
           ? 'yes'
           : 'no',
 
@@ -89,17 +108,27 @@ export async function enrichLectureMetadata(
 
 
   await updateLectureMetadata(
-    supabase,
-    lectureId,
+
+    input.supabase,
+
+    input.lectureId,
+
     {
 
-      title,
+      title:
+        input.title,
 
-      thumbnailUrl,
+      thumbnailUrl:
+        input.thumbnailUrl,
 
-      metadata,
+      language:
+        input.language,
+
+      metadata:
+        input.metadata,
 
     }
+
   );
 
 
@@ -109,7 +138,7 @@ export async function enrichLectureMetadata(
     {
 
       'Lecture ID':
-        lectureId,
+        input.lectureId,
 
     }
   );

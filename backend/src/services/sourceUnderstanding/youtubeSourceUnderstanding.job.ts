@@ -9,36 +9,30 @@
  *      ↓
  * validate + canonicalize
  *      ↓
- * SourceUnderstandingService
- *      ↓
- * Gemini multimodal understanding
+ * Gemini multimodal source understanding
  *      ↓
  * Canonical KnowledgeRepresentation
  *      ↓
+ * enrich lecture title / thumbnail / language / metadata
+ *      ↓
  * persist canonical KR
  *      ↓
- * Knowledge Engine
+ * generate Smart Notes from canonical KR
  *      ↓
- * generate Smart Notes FROM KR
- *      ↓
- * persist notes
+ * persist Smart Notes
  *      ↓
  * complete AI job
  *
  * IMPORTANT:
  *
- * Gemini understands the original YouTube source only ONCE.
+ * Metadata enrichment is NON-FATAL.
  *
- * Smart Notes generation consumes the already-created canonical
- * KnowledgeRepresentation. It does not re-fetch or re-process YouTube.
+ * If title / thumbnail / metadata enrichment fails, the expensive successful
+ * source-understanding result must still continue through:
+ *
+ * - KR persistence
+ * - Smart Notes generation
  */
-import {
-  resolveYouTubeMetadata,
-} from './youtubeMetadata.resolver';
-
-import {
-  enrichLectureMetadata,
-} from '../lectureMetadata.service';
 
 import type {
   SupabaseClient,
@@ -47,6 +41,14 @@ import type {
 import {
   understandYouTubeSource,
 } from './sourceUnderstanding.service';
+
+import {
+  resolveYouTubeMetadata,
+} from './youtubeMetadata.resolver';
+
+import {
+  enrichLectureMetadata,
+} from '../lectureMetadata.service';
 
 import {
   saveKnowledgeRepresentation,
@@ -71,15 +73,20 @@ import {
 
 export interface RunYouTubeSourceUnderstandingJobInput {
 
-  url: string;
+  url:
+    string;
 
-  lectureId: string;
+  lectureId:
+    string;
 
-  aiJobId: string;
+  aiJobId:
+    string;
 
-  userId: string;
+  userId:
+    string;
 
-  supabase: SupabaseClient;
+  supabase:
+    SupabaseClient;
 
 }
 
@@ -88,29 +95,20 @@ export interface RunYouTubeSourceUnderstandingJobInput {
 // YouTube URL Parsing
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Extracts a YouTube video ID from supported public URL formats.
- *
- * Supported examples:
- *
- * https://www.youtube.com/watch?v=VIDEO_ID
- * https://youtube.com/watch?v=VIDEO_ID
- * https://youtu.be/VIDEO_ID
- * https://www.youtube.com/shorts/VIDEO_ID
- * https://www.youtube.com/embed/VIDEO_ID
- *
- * Returns a clean 11-character video ID.
- */
 function extractYouTubeVideoId(
   rawUrl: string
 ): string {
 
-  let parsed: URL;
+  let parsed:
+    URL;
+
 
   try {
 
     parsed =
-      new URL(rawUrl);
+      new URL(
+        rawUrl
+      );
 
   } catch {
 
@@ -124,7 +122,10 @@ function extractYouTubeVideoId(
   const hostname =
     parsed.hostname
       .toLowerCase()
-      .replace(/^www\./, '');
+      .replace(
+        /^www\./,
+        ''
+      );
 
 
   let videoId:
@@ -132,8 +133,6 @@ function extractYouTubeVideoId(
     null;
 
 
-  // Standard YouTube URL:
-  //
   // youtube.com/watch?v=...
 
   if (
@@ -146,12 +145,14 @@ function extractYouTubeVideoId(
     ) {
 
       videoId =
-        parsed.searchParams.get('v');
+        parsed.searchParams.get(
+          'v'
+        );
 
     } else {
 
-      // /shorts/<id>
-      // /embed/<id>
+      // youtube.com/shorts/<id>
+      // youtube.com/embed/<id>
 
       const segments =
         parsed.pathname
@@ -177,8 +178,6 @@ function extractYouTubeVideoId(
   }
 
 
-  // Short URL:
-  //
   // youtu.be/<id>
 
   if (
@@ -199,7 +198,9 @@ function extractYouTubeVideoId(
 
   if (
     !videoId ||
-    !/^[A-Za-z0-9_-]{11}$/.test(videoId)
+    !/^[A-Za-z0-9_-]{11}$/.test(
+      videoId
+    )
   ) {
 
     throw new Error(
@@ -242,23 +243,6 @@ export async function runYouTubeSourceUnderstandingJob(
     Date.now();
 
 
-  /*
-   * Track completed stages so failure logs and ai_jobs metadata can tell us
-   * exactly how far the pipeline progressed.
-   */
-
-  let knowledgeRepresentationId:
-    string | null =
-    null;
-
-  let noteId:
-    string | null =
-    null;
-
-  let currentStage =
-    'initializing';
-
-
   log.banner(
     'YouTube Source Understanding Job Started',
     {
@@ -279,19 +263,21 @@ export async function runYouTubeSourceUnderstandingJob(
   try {
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Stage 1 — Validate + canonicalize
+    // Stage 1 — Validate + canonicalize YouTube URL
     // ─────────────────────────────────────────────────────────────────────────
 
-    currentStage =
-      'validating';
-
-
     await updateAIJobStatus(
+
       supabase,
+
       aiJobId,
+
       'processing',
+
       'validating',
+
       5
+
     );
 
 
@@ -321,28 +307,23 @@ export async function runYouTubeSourceUnderstandingJob(
 
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Stage 2 — Understand source
-    //
-    // This is expected to be the longest-running stage.
-    //
-    // Gemini performs direct multimodal understanding of the YouTube source.
-    //
-    // IMPORTANT:
-    //
-    // This is the ONLY stage where the original YouTube source is understood.
+    // Stage 2 — Direct multimodal source understanding
     // ─────────────────────────────────────────────────────────────────────────
 
-    currentStage =
-      'understanding_source';
-
-
     await updateAIJobStatus(
+
       supabase,
+
       aiJobId,
+
       'processing',
+
       'understanding_source',
+
       15,
+
       undefined,
+
       {
 
         videoId,
@@ -353,6 +334,7 @@ export async function runYouTubeSourceUnderstandingJob(
           'GeminiYouTubeProvider',
 
       }
+
     );
 
 
@@ -404,164 +386,159 @@ export async function runYouTubeSourceUnderstandingJob(
       }
     );
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Stage 2.5 — Enrich lecture metadata
-//
-// At upload time, the lecture is created before source understanding finishes.
-//
-// For YouTube uploads, that means the initial lecture may contain:
-//
-// title:
-//   raw YouTube URL
-//
-// thumbnail:
-//   null
-//
-// Now that source understanding has completed, we have:
-//
-// - a meaningful educational title from the canonical KR
-// - a validated YouTube video ID
-// - a deterministic thumbnail URL
-//
-// Metadata enrichment is intentionally NON-FATAL.
-//
-// If this stage fails, we still continue with:
-//
-// - KR persistence
-// - Smart Notes generation
-//
-// A cosmetic metadata failure must never discard an expensive successful
-// Gemini source-understanding result.
-// ─────────────────────────────────────────────────────────────────────────────
 
-try {
+    // ─────────────────────────────────────────────────────────────────────────
+    // Stage 2.5 — Enrich lecture metadata
+    //
+    // At upload time, the lecture may initially contain:
+    //
+    // title:
+    //   raw YouTube URL
+    //
+    // thumbnail:
+    //   null
+    //
+    // language:
+    //   null
+    //
+    // Now we have enough information to enrich it.
+    //
+    // IMPORTANT:
+    //
+    // This stage is intentionally NON-FATAL.
+    //
+    // Failure here must not discard a successful Gemini result.
+    // ─────────────────────────────────────────────────────────────────────────
 
-  const youtubeMetadata =
-    resolveYouTubeMetadata(
-      videoId
-    );
+    try {
+
+      const youtubeMetadata =
+        resolveYouTubeMetadata(
+          videoId
+        );
 
 
-  log.info(
-    'YouTubeSourceUnderstandingJob',
-    'Enriching lecture with resolved YouTube metadata',
-    {
+      log.info(
+        'YouTubeSourceUnderstandingJob',
+        'Enriching lecture with resolved YouTube metadata',
+        {
 
-      'Lecture ID':
+          'Lecture ID':
+            lectureId,
+
+          'Title':
+            understanding.knowledge.title,
+
+          'Thumbnail':
+            youtubeMetadata.thumbnailUrl,
+
+          'Language':
+            understanding.knowledge.language,
+
+        }
+      );
+
+
+      await enrichLectureMetadata({
+
+        supabase,
+
         lectureId,
 
-      'Title':
-        understanding.knowledge.title,
-
-      'Thumbnail':
-        youtubeMetadata.thumbnailUrl,
-
-    }
-  );
-
-
-  await enrichLectureMetadata({
-
-    supabase,
-
-    lectureId,
-
-    title:
-      understanding.knowledge.title,
-
-    thumbnailUrl:
-      youtubeMetadata.thumbnailUrl,
-
-    metadata: {
-
-      youtube: {
-
-        videoId:
-          youtubeMetadata.videoId,
-
-        canonicalUrl:
-          youtubeMetadata.canonicalUrl,
+        title:
+          understanding.knowledge.title,
 
         thumbnailUrl:
           youtubeMetadata.thumbnailUrl,
 
-      },
+        language:
+          understanding.knowledge.language,
 
-      language:
-        understanding.knowledge.language,
+        metadata: {
 
-      sourceUnderstanding: {
+          youtube: {
 
-        provider:
-          understanding.metadata.provider,
+            videoId:
+              youtubeMetadata.videoId,
 
-        model:
-          understanding.metadata.model,
+            canonicalUrl:
+              youtubeMetadata.canonicalUrl,
 
-        schemaVersion:
-          understanding.knowledge.schemaVersion,
+            thumbnailUrl:
+              youtubeMetadata.thumbnailUrl,
 
-      },
+          },
 
-    },
+          sourceUnderstanding: {
 
-  });
+            provider:
+              understanding.metadata.provider,
+
+            model:
+              understanding.metadata.model,
+
+            schemaVersion:
+              understanding.knowledge.schemaVersion,
+
+          },
+
+        },
+
+      });
 
 
-  log.success(
-    'YouTubeSourceUnderstandingJob',
-    'Lecture metadata enriched',
-    {
+      log.success(
+        'YouTubeSourceUnderstandingJob',
+        'Lecture metadata enriched',
+        {
 
-      'Lecture ID':
-        lectureId,
+          'Lecture ID':
+            lectureId,
 
-      'Title':
-        understanding.knowledge.title,
+          'Title':
+            understanding.knowledge.title,
 
-      'Thumbnail':
-        youtubeMetadata.thumbnailUrl,
+          'Thumbnail':
+            youtubeMetadata.thumbnailUrl,
+
+          'Language':
+            understanding.knowledge.language,
+
+        }
+      );
+
+
+    } catch (
+      metadataError: unknown
+    ) {
+
+      log.error(
+        'YouTubeSourceUnderstandingJob',
+        'Lecture metadata enrichment failed — continuing pipeline',
+        metadataError
+      );
 
     }
-  );
 
 
-} catch (
-  metadataError: unknown
-) {
-
-  /*
-   * NON-FATAL.
-   *
-   * Do not rethrow.
-   *
-   * Source understanding already succeeded. We should still persist the
-   * canonical KR and generate Smart Notes even if lecture metadata enrichment
-   * fails.
-   */
-
-  log.error(
-    'YouTubeSourceUnderstandingJob',
-    'Lecture metadata enrichment failed — continuing pipeline',
-    metadataError
-  );
-
-}
     // ─────────────────────────────────────────────────────────────────────────
     // Stage 3 — Persist Canonical KnowledgeRepresentation
     // ─────────────────────────────────────────────────────────────────────────
 
-    currentStage =
-      'saving_knowledge';
-
-
     await updateAIJobStatus(
+
       supabase,
+
       aiJobId,
+
       'processing',
+
       'saving_knowledge',
-      80,
+
+      90,
+
       undefined,
+
       {
 
         provider:
@@ -574,6 +551,7 @@ try {
           understanding.metadata.providerProcessingTimeMs,
 
       }
+
     );
 
 
@@ -598,65 +576,55 @@ try {
       });
 
 
-    knowledgeRepresentationId =
-      persisted.id;
-
-
     log.success(
       'YouTubeSourceUnderstandingJob',
       'Canonical KnowledgeRepresentation persisted',
       {
 
         'Knowledge Representation ID':
-          knowledgeRepresentationId,
+          persisted.id,
 
       }
     );
 
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Stage 4 — Generate Smart Notes FROM Canonical KR
+    // Stage 4 — Generate Smart Notes from canonical knowledge
     //
-    // This is the bridge introduced in Phase 3.4.
+    // This is the critical bridge:
     //
-    // IMPORTANT:
+    // Canonical KR
+    //      ↓
+    // Knowledge Engine
+    //      ↓
+    // Smart Notes
+    //      ↓
+    // notes table
     //
-    // We pass understanding.knowledge directly.
-    //
-    // We do NOT:
-    //
-    // - send the YouTube URL back into source understanding
-    // - download the video
-    // - generate another transcript
-    // - regenerate the KR
-    //
-    // The Knowledge Engine transforms the existing KR into student-facing
-    // Smart Notes and persists them into the existing "notes" table.
+    // We no longer require a transcript for this direct YouTube pipeline.
     // ─────────────────────────────────────────────────────────────────────────
 
-    currentStage =
-      'notes_generation';
-
-
     await updateAIJobStatus(
+
       supabase,
+
       aiJobId,
+
       'processing',
+
       'notes_generation',
-      85,
+
+      95,
+
       undefined,
+
       {
 
-        pipeline:
-          'youtube_knowledge_to_notes',
-
-        knowledgeRepresentationId,
-
-        videoId,
-
-        canonicalUrl,
+        knowledgeRepresentationId:
+          persisted.id,
 
       }
+
     );
 
 
@@ -669,7 +637,7 @@ try {
           lectureId,
 
         'Knowledge Representation ID':
-          knowledgeRepresentationId,
+          persisted.id,
 
         'Topics':
           understanding.knowledge.topics.length,
@@ -696,10 +664,6 @@ try {
       });
 
 
-    noteId =
-      notesResult.noteId;
-
-
     log.success(
       'YouTubeSourceUnderstandingJob',
       'Smart Notes generated and persisted',
@@ -709,10 +673,10 @@ try {
           lectureId,
 
         'Note ID':
-          noteId,
+          notesResult.noteId,
 
         'Knowledge Representation ID':
-          knowledgeRepresentationId,
+          persisted.id,
 
       }
     );
@@ -720,19 +684,7 @@ try {
 
     // ─────────────────────────────────────────────────────────────────────────
     // Stage 5 — Complete AI job
-    //
-    // Only the outer orchestration layer marks the complete YouTube pipeline
-    // as finished.
-    //
-    // At this point BOTH durable outputs exist:
-    //
-    // 1. knowledge_representations row
-    // 2. notes row
     // ─────────────────────────────────────────────────────────────────────────
-
-    currentStage =
-      'done';
-
 
     const totalProcessingTimeMs =
       Date.now() -
@@ -740,20 +692,29 @@ try {
 
 
     await updateAIJobStatus(
+
       supabase,
+
       aiJobId,
+
       'completed',
+
       'done',
+
       100,
+
       undefined,
+
       {
 
         pipeline:
-          'youtube_source_understanding_to_smart_notes',
+          'direct_source_understanding',
 
-        knowledgeRepresentationId,
+        knowledgeRepresentationId:
+          persisted.id,
 
-        noteId,
+        noteId:
+          notesResult.noteId,
 
         videoId,
 
@@ -768,6 +729,9 @@ try {
         title:
           understanding.knowledge.title,
 
+        language:
+          understanding.knowledge.language,
+
         schemaVersion:
           understanding.knowledge.schemaVersion,
 
@@ -780,6 +744,7 @@ try {
         totalProcessingTimeMs,
 
       }
+
     );
 
 
@@ -795,10 +760,10 @@ try {
           aiJobId,
 
         'KR ID':
-          knowledgeRepresentationId,
+          persisted.id,
 
         'Note ID':
-          noteId,
+          notesResult.noteId,
 
         'Duration':
           `${totalProcessingTimeMs}ms`,
@@ -813,14 +778,6 @@ try {
 
     // ─────────────────────────────────────────────────────────────────────────
     // Failure handling
-    //
-    // A useful property of this architecture:
-    //
-    // If KR persistence succeeds but Smart Notes generation fails,
-    // the persisted KR remains available.
-    //
-    // We do NOT rerun Gemini source understanding automatically here.
-    // A future retry mechanism can regenerate notes directly from the stored KR.
     // ─────────────────────────────────────────────────────────────────────────
 
     const message =
@@ -831,51 +788,35 @@ try {
 
     log.error(
       'YouTubeSourceUnderstandingJob',
-      `YouTube pipeline failed at stage: ${currentStage}`,
+      'YouTube source understanding failed',
       error
     );
 
 
-    /*
-     * knowledge.service.ts may already mark the job failed when notes
-     * generation itself throws.
-     *
-     * This outer update is still useful because it records orchestration-level
-     * context including the persisted KR ID and exact failed stage.
-     */
-
     await updateAIJobStatus(
+
       supabase,
+
       aiJobId,
+
       'failed',
-      currentStage,
+
+      'source_understanding_failed',
+
       0,
+
       message,
+
       {
 
         pipeline:
-          'youtube_source_understanding_to_smart_notes',
-
-        failedStage:
-          currentStage,
-
-        knowledgeRepresentationId,
-
-        noteId,
-
-        knowledgePersisted:
-          knowledgeRepresentationId !== null,
-
-        notesPersisted:
-          noteId !== null,
+          'direct_source_understanding',
 
         failedAt:
           new Date().toISOString(),
 
-        elapsedMs:
-          Date.now() - startedAt,
-
       }
+
     );
 
 
