@@ -1,7 +1,11 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Play, CheckCircle2, Clock, Film, Mic, FileStack, BookOpen } from 'lucide-react';
+import type { DashboardLecture } from '@/hooks/useDashboardData';
 
+// Kept for backwards-compatibility with the widgets/index.ts export.
+// Nothing should create SmartNoteItem objects anymore — ContinueLearning
+// derives its display data directly from the canonical DashboardLecture.
 export interface SmartNoteItem {
   id: string;
   lectureId: string;
@@ -14,13 +18,17 @@ export interface SmartNoteItem {
 }
 
 interface ContinueLearningProps {
-  items: SmartNoteItem[];
+  /** Canonical lecture list from useDashboardData — same objects used by RecentUploads */
+  lectures: DashboardLecture[];
 }
 
-export function ContinueLearning({ items }: ContinueLearningProps) {
+export function ContinueLearning({ lectures }: ContinueLearningProps) {
   const navigate = useNavigate();
 
-  if (items.length === 0) return null;
+  // Only show lectures that have completed processing and are ready to study
+  const studyItems = lectures.filter((l) => l.status === 'completed');
+
+  if (studyItems.length === 0) return null;
 
   const getIcon = (type: string) => {
     const t = type.toLowerCase();
@@ -43,10 +51,10 @@ export function ContinueLearning({ items }: ContinueLearningProps) {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {items.map((item) => (
+        {studyItems.map((lecture) => (
           <button
-            key={item.id}
-            onClick={() => navigate(`/dashboard/notes?lectureId=${item.lectureId}`)}
+            key={lecture.id}
+            onClick={() => navigate(`/dashboard/notes?lectureId=${lecture.id}`)}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -76,7 +84,9 @@ export function ContinueLearning({ items }: ContinueLearningProps) {
                 width: 64,
                 height: 48,
                 borderRadius: 8,
-                background: item.thumbnail_url ? `url(${item.thumbnail_url}) center/cover` : 'var(--np-bg-secondary)',
+                background: lecture.thumbnailUrl
+                  ? `url(${lecture.thumbnailUrl}) center/cover`
+                  : 'var(--np-bg-secondary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -84,7 +94,7 @@ export function ContinueLearning({ items }: ContinueLearningProps) {
                 border: '1px solid var(--np-border)',
               }}
             >
-              {!item.thumbnail_url && getIcon(item.type)}
+              {!lecture.thumbnailUrl && getIcon(lecture.type)}
             </div>
 
             {/* Details */}
@@ -100,17 +110,17 @@ export function ContinueLearning({ items }: ContinueLearningProps) {
                   textOverflow: 'ellipsis',
                 }}
               >
-                {item.title}
+                {lecture.title}
               </h3>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 12, color: 'var(--np-text-secondary)' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   <Clock size={12} />
-                  {item.readingTime} min read
+                  {lecture.date}
                 </span>
                 <span>•</span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: item.completed ? '#10B981' : 'var(--np-text-secondary)' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#10B981' }}>
                   <CheckCircle2 size={12} />
-                  {item.completed ? 'Completed' : 'Notes Ready'}
+                  Ready to Study
                 </span>
               </div>
             </div>

@@ -13,20 +13,30 @@ import { useDashboardData } from '@/hooks/useDashboardData';
 
 /**
  * DashboardPage
- * 
- * Phase 5.1: Connected to real data using useDashboardData hook.
- * 
+ *
+ * All widgets consume the SAME `lectures` array from useDashboardData().
+ * There is one canonical DashboardLecture model — no separate mappings
+ * for RecentUploads vs ContinueLearning vs stats.
+ *
+ * Realtime updates flow: Supabase postgres_changes → fetchDashboardData()
+ * → setLectures() → both widgets re-render with identical data.
+ *
  * Layout:
  *   Hero         (full-width, 60/40 grid)
  *   QuickStats   (4-column row)
- *   ─────────────────────────────────────────
- *   Left (8/12)  Right (4/12)
- *   Recent       AiActivity
- *   Lectures     StudyProgress
- *   TodaysFocus
+ *   ─────────────────────────────────────────────────────
+ *   Left (8/12)        Right (4/12)
+ *   ContinueLearning   RecentUploads
+ *   TodaysFocus        StudyProgress
  */
 export function DashboardPage() {
-  const { lectures, recentNotes, lectureCount, noteCount, flashcardCount, stats } = useDashboardData();
+  const {
+    lectures,
+    lectureCount,
+    noteCount,
+    flashcardCount,
+    stats,
+  } = useDashboardData();
 
   return (
     <DashboardGrid>
@@ -47,10 +57,15 @@ export function DashboardPage() {
             gap: 28,
           }}
         >
-          <ContinueLearning items={recentNotes} />
-          
+          {/*
+           * ContinueLearning receives the SAME lectures array as RecentUploads.
+           * It filters internally to only show completed lectures.
+           * Title and thumbnail are guaranteed identical to RecentUploads entries.
+           */}
+          <ContinueLearning lectures={lectures} />
+
           <TodaysFocus
-            items={[]} // Could be populated with actual AI recommendations later
+            items={[]}
             title="Today's Focus"
             emptyTitle="You're all caught up!"
             emptyMessage="Upload more lectures to receive personalized study recommendations."
@@ -66,6 +81,11 @@ export function DashboardPage() {
             gap: 28,
           }}
         >
+          {/*
+           * RecentUploads receives the same lectures array.
+           * It shows all statuses (processing, completed, failed, etc.)
+           * and slices to the 4 most recent.
+           */}
           <RecentUploads uploads={lectures} />
           <StudyProgress stats={stats} />
         </div>

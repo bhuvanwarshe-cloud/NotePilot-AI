@@ -1,10 +1,10 @@
 import { motion } from 'framer-motion';
 import { UploadCloud, FileAudio, FileVideo, FileText, CheckCircle2, Loader2, AlertCircle, Upload } from 'lucide-react';
-import type { Lecture } from './RecentLectures';
+import type { DashboardLecture } from '@/hooks/useDashboardData';
 import { Link } from 'react-router-dom';
 
 interface RecentUploadsProps {
-  uploads: Lecture[];
+  uploads: DashboardLecture[];
 }
 
 export function RecentUploads({ uploads }: RecentUploadsProps) {
@@ -21,7 +21,7 @@ export function RecentUploads({ uploads }: RecentUploadsProps) {
     }
   };
 
-  const getStatusDisplay = (upload: Lecture) => {
+  const getStatusDisplay = (upload: DashboardLecture) => {
     // AI job metadata takes priority: manualActionRequired is stored in metadata,
     // not in status (which stays 'failed' to remain within the Postgres enum).
     if (upload.jobManualAction === true) {
@@ -62,7 +62,7 @@ export function RecentUploads({ uploads }: RecentUploadsProps) {
       );
     }
 
-    // Lecture lifecycle states
+    // Lecture lifecycle: uploaded → processing → transcribed → completed | failed
     switch (upload.status) {
       case 'uploaded':
       case 'processing':
@@ -98,6 +98,9 @@ export function RecentUploads({ uploads }: RecentUploadsProps) {
     }
   };
 
+  // Show only the 4 most recent uploads in the sidebar widget
+  const displayUploads = uploads.slice(0, 4);
+
   return (
     <motion.section
       initial={{ opacity: 0, y: 10 }}
@@ -118,7 +121,7 @@ export function RecentUploads({ uploads }: RecentUploadsProps) {
         boxShadow: 'var(--np-shadow-card)',
         overflow: 'hidden'
       }}>
-        {uploads.map((upload, index) => (
+        {displayUploads.map((upload, index) => (
           <div
             key={upload.id}
             style={{
@@ -126,7 +129,7 @@ export function RecentUploads({ uploads }: RecentUploadsProps) {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              borderBottom: index < uploads.length - 1 ? '1px solid var(--np-border)' : 'none',
+              borderBottom: index < displayUploads.length - 1 ? '1px solid var(--np-border)' : 'none',
               gap: 16
             }}
           >
@@ -151,7 +154,7 @@ export function RecentUploads({ uploads }: RecentUploadsProps) {
                 {getStatusDisplay(upload)}
               </div>
             </div>
-            
+
             <div style={{ fontSize: 12, color: 'var(--np-text-muted)', flexShrink: 0 }}>
               {upload.date}
             </div>
