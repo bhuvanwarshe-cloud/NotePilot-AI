@@ -28,14 +28,22 @@ export function useDashboardData() {
 
     async function fetchData() {
       try {
-        const { data: lecturesData } = await supabase
-          .from('lectures')
-          .select(`
-            id, title, type, status, created_at,
-            ai_jobs (
-              id, status, metadata
-            )
-          `)
+      const { data: lecturesData } = await supabase
+  .from('lectures')
+  .select(`
+    id,
+    title,
+    type,
+    status,
+    created_at,
+    thumbnail_url,
+    language,
+    ai_jobs (
+      id,
+      status,
+      metadata
+    )
+  `)
           .eq('user_id', user!.id)
           .order('created_at', { ascending: false })
           .limit(4);
@@ -85,13 +93,19 @@ export function useDashboardData() {
 
         setLectures(
           (lecturesData || []).map((l: {
-            id: string;
-            title: string;
-            type: string;
-            created_at: string;
-            status?: string;
-            ai_jobs?: Array<{ id: string; status: string; metadata?: Record<string, unknown> }>;
-          }) => {
+    id: string;
+    title: string;
+    type: string;
+    created_at: string;
+    thumbnail_url?: string | null;
+    language?: string | null;
+    status?: string;
+    ai_jobs?: Array<{
+      id: string;
+      status: string;
+      metadata?: Record<string, unknown>;
+    }>;
+}) => {
             // Find the most recent transcription job for this lecture
             const jobs = Array.isArray(l.ai_jobs) ? l.ai_jobs : [];
             const latestJob = jobs[0] as { status: string; metadata?: Record<string, unknown> } | undefined;
@@ -104,17 +118,27 @@ export function useDashboardData() {
               ? latestJob.metadata.reason
               : undefined;
 
-            return {
-              id: l.id,
-              title: l.title,
-              type: l.type as 'audio' | 'video' | 'text' | 'pdf' | 'youtube',
-              date: new Date(l.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
-              status: l.status,
-              jobStatus,
-              jobManualAction,
-              jobUserMessage,
-              jobReason,
-            };
+         return {
+    id: l.id,
+    title: l.title,
+    type: l.type as 'audio' | 'video' | 'text' | 'pdf' | 'youtube',
+
+    thumbnailUrl: l.thumbnail_url ?? null,
+    language: l.language ?? undefined,
+
+    date: new Date(l.created_at).toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    }),
+
+    status: l.status,
+
+    jobStatus,
+    jobManualAction,
+    jobUserMessage,
+    jobReason,
+};
           })
         );
 
@@ -175,9 +199,26 @@ export function useDashboardData() {
 
     fetchData();
 
-    return () => {
-      mounted = false;
-    };
+    const channel = supabase
+  .channel(`dashboard-${user.id}`)
+  .on(
+    'postgres_changes',
+    {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'lectures',
+      filter: `user_id=eq.${user.id}`,
+    },
+    () => {
+      fetchData();
+    }
+  )
+  .subscribe();
+
+   return () => {
+  mounted = false;
+  supabase.removeChannel(channel);
+};
   }, [user]);
 
   return {

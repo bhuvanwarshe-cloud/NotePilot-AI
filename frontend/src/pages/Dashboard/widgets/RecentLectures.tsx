@@ -5,6 +5,10 @@ export interface Lecture {
   id: string;
   title: string;
   type: 'video' | 'audio' | 'pdf' | 'youtube' | 'text';
+
+  thumbnailUrl?: string | null;
+  language?: string;
+
   date: string;
   status?: string;
   /** Status of the most recent AI job for this lecture */
@@ -213,7 +217,38 @@ function LectureCard({ lecture }: { lecture: Lecture }) {
         gap: 4,
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+      <div
+  style={{
+    display: 'flex',
+    gap: 12,
+    alignItems: 'flex-start',
+  }}
+>
+  {lecture.thumbnailUrl ? (
+    <img
+      src={lecture.thumbnailUrl}
+      alt={lecture.title}
+      style={{
+        width: 72,
+        height: 42,
+        objectFit: 'cover',
+        borderRadius: 8,
+        flexShrink: 0,
+      }}
+    />
+  ) : (
+    <div
+      style={{
+        width: 72,
+        height: 42,
+        borderRadius: 8,
+        background: 'var(--np-surface-elevated)',
+        flexShrink: 0,
+      }}
+    />
+  )}
+
+  <div style={{ flex: 1 }}> </div>
         <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--np-text-primary)', margin: 0, 
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' 
         }}>
