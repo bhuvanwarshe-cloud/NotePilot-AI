@@ -22,8 +22,8 @@ export function RecentUploads({ uploads }: RecentUploadsProps) {
   };
 
   const getStatusDisplay = (upload: DashboardLecture) => {
-    // AI job metadata takes priority: manualActionRequired is stored in metadata,
-    // not in status (which stays 'failed' to remain within the Postgres enum).
+    // Manual-action flag takes absolute priority — it lives in ai_jobs.metadata,
+    // not in status, so we check it before touching any status field.
     if (upload.jobManualAction === true) {
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -62,10 +62,28 @@ export function RecentUploads({ uploads }: RecentUploadsProps) {
       );
     }
 
-    // Lecture lifecycle: uploaded → processing → transcribed → completed | failed
-    switch (upload.status) {
-      case 'uploaded':
+    // ── Priority 1: ai_jobs.status ───────────────────────────────────────────
+    // The AI pipeline updates ai_jobs.status before writing back to
+    // lectures.status. jobStatus is therefore always the freshest signal.
+    // Supabase Realtime fires on ai_jobs UPDATE → fetchDashboardData() re-runs
+    // → jobStatus propagates here without any polling or page refresh.
+    //
+    // ── Priority 2: lectures.status (fallback) ───────────────────────────────
+    // Used only when no ai_jobs row exists yet (e.g. immediately after upload).
+    const effectiveStatus = upload.jobStatus ?? upload.status;
+
+    switch (effectiveStatus) {
+      // ── ai_jobs states ───────────────────────────────────────────────────
+      case 'queued':
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--np-text-secondary)', fontSize: 12, fontWeight: 500 }}>
+            <Loader2 size={12} className="animate-spin" />
+            Queued
+          </div>
+        );
       case 'processing':
+      // ── lecture fallback states mapping to the same phase ────────────────
+      case 'uploaded':
         return (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--np-blue)', fontSize: 12, fontWeight: 500 }}>
             <Loader2 size={12} className="animate-spin" />
