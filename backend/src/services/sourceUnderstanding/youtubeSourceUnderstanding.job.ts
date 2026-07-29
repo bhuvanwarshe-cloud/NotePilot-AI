@@ -55,8 +55,8 @@ import {
 } from '../knowledgeRepresentation/knowledgeRepresentation.service';
 
 import {
-  generateNotesFromKnowledgeRepresentation,
-} from '../knowledge/knowledge.service';
+  generateKnowledgeArtifacts,
+} from '../artifacts/artifactOrchestrator.service';
 
 import {
   updateAIJobStatus,
@@ -649,37 +649,46 @@ export async function runYouTubeSourceUnderstandingJob(
     );
 
 
-    const notesResult =
-      await generateNotesFromKnowledgeRepresentation({
+   const artifacts =
+  await generateKnowledgeArtifacts({
 
-        supabase,
+    supabase,
 
-        lectureId,
+    lectureId,
 
-        aiJobId,
+    aiJobId,
 
-        knowledge:
-          understanding.knowledge,
+    knowledge:
+      understanding.knowledge,
 
-      });
+  });
 
 
-    log.success(
-      'YouTubeSourceUnderstandingJob',
-      'Smart Notes generated and persisted',
-      {
+log.success(
 
-        'Lecture ID':
-          lectureId,
+  'YouTubeSourceUnderstandingJob',
 
-        'Note ID':
-          notesResult.noteId,
+  'Knowledge artifacts generated successfully',
 
-        'Knowledge Representation ID':
-          persisted.id,
+  {
 
-      }
-    );
+    'Lecture ID':
+      lectureId,
+
+    'Knowledge Representation ID':
+      persisted.id,
+
+    'Note ID':
+      artifacts.noteId,
+
+    'Flashcards':
+      String(
+        artifacts.flashcardsCount
+      ),
+
+  }
+
+);
 
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -713,8 +722,11 @@ export async function runYouTubeSourceUnderstandingJob(
         knowledgeRepresentationId:
           persisted.id,
 
-        noteId:
-          notesResult.noteId,
+       noteId:
+  artifacts.noteId,
+
+flashcardsCount:
+  artifacts.flashcardsCount,
 
         videoId,
 
@@ -763,8 +775,12 @@ export async function runYouTubeSourceUnderstandingJob(
           persisted.id,
 
         'Note ID':
-          notesResult.noteId,
+  artifacts.noteId,
 
+'Flashcards':
+  String(
+    artifacts.flashcardsCount
+  ),
         'Duration':
           `${totalProcessingTimeMs}ms`,
 

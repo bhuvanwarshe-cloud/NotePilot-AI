@@ -34,7 +34,6 @@ import type {
   KnowledgeRepresentation,
 } from '../sourceUnderstanding/sourceUnderstanding.service';
 
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Existing transcript notes options
 // ─────────────────────────────────────────────────────────────────────────────
@@ -62,17 +61,11 @@ export interface GenerateNotesOptions {
 
 export interface GenerateNotesFromKnowledgeOptions {
 
-  supabase:
-    SupabaseClient;
+    supabase: SupabaseClient;
 
-  lectureId:
-    string;
+    lectureId: string;
 
-  aiJobId:
-    string;
-
-  knowledge:
-    KnowledgeRepresentation;
+    knowledge: KnowledgeRepresentation;
 
 }
 
@@ -274,8 +267,7 @@ export async function generateNotesFromKnowledgeRepresentation(
   const {
     supabase,
     lectureId,
-    aiJobId,
-    knowledge,
+    knowledge
   } = opts;
 
 
@@ -310,21 +302,6 @@ export async function generateNotesFromKnowledgeRepresentation(
     );
 
 
-    await updateAIJobStatus(
-      supabase,
-      aiJobId,
-      'processing',
-      'notes_generation',
-      90,
-      undefined,
-      {
-
-        pipeline:
-          'canonical_knowledge_to_notes',
-
-      }
-    );
-
 
     const result =
       await knowledgeEngine.generateNotesFromKnowledge(
@@ -335,14 +312,6 @@ export async function generateNotesFromKnowledgeRepresentation(
 
       );
 
-
-    await updateAIJobStatus(
-      supabase,
-      aiJobId,
-      'processing',
-      'saving_notes',
-      97
-    );
 
 
     const {
@@ -428,24 +397,6 @@ export async function generateNotesFromKnowledgeRepresentation(
       error
     );
 
-
-    await updateAIJobStatus(
-      supabase,
-      aiJobId,
-      'failed',
-      'notes_generation',
-      0,
-      message
-    ).catch(
-      (statusError) =>
-
-        log.error(
-          'KnowledgeService',
-          'Could not update AI job to failed',
-          statusError
-        )
-
-    );
 
 
     throw error;

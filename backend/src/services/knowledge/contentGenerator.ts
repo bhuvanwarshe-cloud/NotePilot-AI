@@ -19,6 +19,8 @@ import type {
 import { MarkdownFormatter } from './markdownFormatter';
 
 import { log } from '../../utils/logger';
+import { buildFlashcardsPrompt } from "../flashcards/prompts/flashcards.prompt";
+import { FlashcardsSchema, type FlashcardDTO } from "../flashcards/flashcard.schema";
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -71,6 +73,11 @@ export interface KnowledgeContentGenerationRequest {
 
 }
 
+export interface FlashcardGenerationRequest {
+  lectureId: string;
+  knowledge: KnowledgeRepresentation;
+  metadata?: Record<string, unknown>;
+}
 
 export class ContentGenerator {
 
@@ -101,6 +108,7 @@ export class ContentGenerator {
     artifact: KnowledgeArtifact;
   }> {
 
+    
     const task =
       `${notesPrompt}
 
@@ -252,6 +260,36 @@ ${serializedKnowledge}`;
   //
   // use the same provider, formatting, metadata, and artifact contract.
   // ───────────────────────────────────────────────────────────────────────────
+async generateFlashcardsFromKnowledge(
+  request: FlashcardGenerationRequest
+): Promise<FlashcardDTO[]> {
+
+  const knowledge = request.knowledge;
+
+  const task = buildFlashcardsPrompt(knowledge);
+
+  const provider = this.providerRouter.createProvider();
+
+  const system = [
+    systemPrompt,
+    philosophyPrompt,
+    formattingPrompt,
+  ].join("\n\n");
+
+  const generatedText = await provider.generate({
+    systemPrompt: system,
+    taskPrompt: task,
+    model: aiConfig.model,
+    temperature: aiConfig.temperature,
+    maxTokens: aiConfig.maxTokens,
+  });
+
+  const flashcards = FlashcardsSchema.parse(
+    JSON.parse(generatedText)
+  );
+
+  return flashcards;
+}
 
   private async generateNotesArtifact(
     lectureId: string,
@@ -381,3 +419,7 @@ ${serializedKnowledge}`;
   }
 
 }
+
+
+
+

@@ -18,6 +18,10 @@ import type {
   KnowledgeRepresentation,
 } from '../sourceUnderstanding/sourceUnderstanding.service';
 
+import type {
+  FlashcardDTO,
+} from '../flashcards/flashcard.schema';
+
 
 export class KnowledgeEngine {
 
@@ -165,6 +169,62 @@ export class KnowledgeEngine {
 
 
     return result;
+
+  }
+
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Canonical KnowledgeRepresentation → Flashcards
+  //
+  // Generates flashcards from the already validated canonical knowledge.
+  //
+  // Unlike Smart Notes, flashcards are persisted directly through the
+  // Flashcard Repository, so no KnowledgeArtifact metadata is stored here.
+  // ───────────────────────────────────────────────────────────────────────────
+
+  async generateFlashcardsFromKnowledge(
+    lectureId: string,
+    knowledge: KnowledgeRepresentation
+  ): Promise<FlashcardDTO[]> {
+
+    log.info(
+      'KnowledgeEngine',
+      'Starting flashcard generation from canonical knowledge',
+      {
+
+        'Lecture ID':
+          lectureId,
+
+        'Title':
+          knowledge.title,
+
+        'Language':
+          knowledge.language,
+
+        'Source':
+          knowledge.source.sourceType,
+
+        'Topics':
+          String(
+            knowledge.topics.length
+          ),
+
+        'Concepts':
+          String(
+            knowledge.concepts.length
+          ),
+
+      }
+    );
+
+
+    return this.contentGenerator.generateFlashcardsFromKnowledge({
+
+      lectureId,
+
+      knowledge,
+
+    });
 
   }
 
