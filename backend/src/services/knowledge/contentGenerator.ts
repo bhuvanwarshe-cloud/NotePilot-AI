@@ -284,8 +284,15 @@ async generateFlashcardsFromKnowledge(
     maxTokens: aiConfig.maxTokens,
   });
 
-  const flashcards = FlashcardsSchema.parse(
-    JSON.parse(generatedText)
+const cleaned = generatedText
+  .replace(/^```json\s*/i, "")
+  .replace(/^```\s*/i, "")
+  .replace(/```$/i, "")
+  .trim();
+
+const flashcards =
+  FlashcardsSchema.parse(
+    JSON.parse(cleaned)
   );
 
   return flashcards;
