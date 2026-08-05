@@ -1,12 +1,12 @@
 import { ArrowLeft, Search, Film, Mic, FileStack, BookOpen, CheckCircle2, Lock } from 'lucide-react';
-import type { StudyNote } from '@/features/study/types';
+import type { StudyLecture } from '@/features/study/types';
 
 interface StudySidebarProps {
-  notes: StudyNote[];
-  selectedNoteId: string | null;
+  items: StudyLecture[];
+  selectedId: string | null;
   searchQuery: string;
   sortOrder: 'newest' | 'oldest' | 'alphabetical';
-  onSelectNote: (noteId: string) => void;
+  onSelect: (id: string) => void;
   onSearchChange: (value: string) => void;
   onSortChange: (value: 'newest' | 'oldest' | 'alphabetical') => void;
   onBack?: () => void;
@@ -14,11 +14,11 @@ interface StudySidebarProps {
 }
 
 export function StudySidebar({
-  notes,
-  selectedNoteId,
+  items,
+  selectedId,
   searchQuery,
   sortOrder,
-  onSelectNote,
+  onSelect,
   onSearchChange,
   onSortChange,
   onBack,
@@ -62,8 +62,8 @@ export function StudySidebar({
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {notes.map((note) => {
-          const isSelected = selectedNoteId === note.id;
+        {items.map((item) => {
+          const isSelected = selectedId === item.id;
           
           const getIcon = (type: string) => {
             const t = type.toLowerCase();
@@ -84,8 +84,8 @@ export function StudySidebar({
 
           return (
             <button
-              key={note.id}
-              onClick={() => onSelectNote(note.id)}
+              key={item.id}
+              onClick={() => onSelect(item.id)}
               style={{
                 display: 'flex',
                 flexDirection: 'column',
@@ -104,11 +104,11 @@ export function StudySidebar({
               <div style={{ display: 'flex', gap: 14, width: '100%', alignItems: 'flex-start' }}>
                 <div style={{ 
                   width: 72, height: 54, borderRadius: 8, 
-                  background: note.lectureThumbnailUrl ? `url(${note.lectureThumbnailUrl}) center/cover` : 'var(--np-bg-secondary)', 
+                  background: item.thumbnailUrl ? `url(${item.thumbnailUrl}) center/cover` : 'var(--np-bg-secondary)', 
                   display: 'flex', justifyContent: 'center', alignItems: 'center', flexShrink: 0,
                   border: '1px solid var(--np-border)'
                 }}>
-                  {!note.lectureThumbnailUrl && getIcon(note.lectureType)}
+                  {!item.thumbnailUrl && getIcon(item.type)}
                 </div>
                 
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -116,22 +116,26 @@ export function StudySidebar({
                     fontSize: 14, fontWeight: 700, color: 'var(--np-text-primary)', 
                     margin: '0 0 6px 0', lineHeight: 1.3 
                   }}>
-                    {note.lectureTitle}
+                    {item.title}
                   </p>
                   
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 8px', fontSize: 11, color: 'var(--np-text-secondary)', alignItems: 'center' }}>
-                    <span style={{ fontWeight: 600 }}>{note.lectureType.replace('Processor', '')}</span>
+                    <span style={{ fontWeight: 600 }}>{item.type.replace('Processor', '')}</span>
                     <span>•</span>
-                    <span style={{ color: note.status === 'completed' ? '#10B981' : 'var(--np-text-secondary)', display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <span style={{ color: item.status === 'completed' ? '#10B981' : 'var(--np-text-secondary)', display: 'flex', alignItems: 'center', gap: 3 }}>
                       <CheckCircle2 size={10} />
-                      {note.status === 'completed' ? 'Completed' : 'Processing'}
+                      {item.status === 'completed' ? 'Completed' : 'Processing'}
                     </span>
-                    <span>•</span>
-                    <span>{note.readingTime} min read</span>
+                    {item.readingTime && (
+                      <>
+                        <span>•</span>
+                        <span>{item.readingTime} min read</span>
+                      </>
+                    )}
                   </div>
                   
                   <div style={{ marginTop: 6, fontSize: 10, color: 'var(--np-text-muted)', fontWeight: 500 }}>
-                    {formatDate(note.createdAt)}
+                    {formatDate(item.createdAt)}
                   </div>
                 </div>
               </div>

@@ -1,3 +1,14 @@
+export interface StudyLecture {
+  id: string; // lectureId
+  title: string;
+  type: string;
+  thumbnailUrl?: string | null;
+  language: string;
+  createdAt: string;
+  status: string;
+  readingTime?: number;
+}
+
 export interface StudyNote {
   id: string;
   lectureId: string;

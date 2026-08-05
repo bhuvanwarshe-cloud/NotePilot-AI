@@ -66,11 +66,20 @@ export function StudyWorkspacePage() {
         {(isMobile ? view === 'list' : true) && (
           <div style={{ minWidth: 0 }}>
             <StudySidebar
-              notes={notes}
-              selectedNoteId={selectedNoteId}
+              items={notes.map(note => ({
+                id: note.id,
+                title: note.lectureTitle,
+                type: note.lectureType,
+                thumbnailUrl: note.lectureThumbnailUrl,
+                language: note.language,
+                createdAt: note.createdAt,
+                status: note.status,
+                readingTime: note.readingTime,
+              }))}
+              selectedId={selectedNoteId}
               searchQuery={searchQuery}
               sortOrder={sortOrder}
-              onSelectNote={setSelectedNoteId}
+              onSelect={setSelectedNoteId}
               onSearchChange={setSearchQuery}
               onSortChange={setSortOrder}
               isMobile={isMobile}

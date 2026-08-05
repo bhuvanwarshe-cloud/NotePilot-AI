@@ -1,10 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import {
-  fetchFlashcardsForLecture,
-  fetchAllFlashcardsForUser,
-} from '@/features/flashcards/services/flashcards.service';
+import { fetchFlashcardsForLecture } from '@/features/flashcards/services/flashcards.service';
 import type { Flashcard } from '@/features/flashcards/types';
 
 interface UseFlashcardsReturn {
@@ -13,53 +9,33 @@ interface UseFlashcardsReturn {
   error: string | null;
   currentIndex: number;
   isFlipped: boolean;
-  activeLectureId: string | null;
   setCurrentIndex: (index: number) => void;
   goNext: () => void;
   goPrev: () => void;
   flip: () => void;
   setFlipped: (flipped: boolean) => void;
   retry: () => void;
-  setLectureId: (lectureId: string) => void;
 }
 
-export function useFlashcards(): UseFlashcardsReturn {
+export function useFlashcards(lectureId: string | null): UseFlashcardsReturn {
   const { user } = useAuth();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const lectureIdFromUrl = searchParams.get('lectureId');
-
+  
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
-  const [activeLectureId, setActiveLectureId] = useState<string | null>(
-    lectureIdFromUrl
-  );
   const [retryCounter, setRetryCounter] = useState(0);
 
   const retry = useCallback(() => {
     setRetryCounter((c) => c + 1);
   }, []);
 
-  const setLectureId = useCallback(
-    (lectureId: string) => {
-      setActiveLectureId(lectureId);
-      setCurrentIndex(0);
-      setIsFlipped(false);
-      // Persist to URL so page refresh restores the selection
-      const next = new URLSearchParams(searchParams);
-      next.set('lectureId', lectureId);
-      setSearchParams(next, { replace: true });
-    },
-    [searchParams, setSearchParams]
-  );
-
   useEffect(() => {
     let mounted = true;
 
     async function load() {
-      if (!user?.id) {
+      if (!user?.id || !lectureId) {
         setFlashcards([]);
         setLoading(false);
         return;
@@ -69,12 +45,7 @@ export function useFlashcards(): UseFlashcardsReturn {
         setLoading(true);
         setError(null);
 
-        let cards: Flashcard[];
-        if (activeLectureId) {
-          cards = await fetchFlashcardsForLecture(activeLectureId);
-        } else {
-          cards = await fetchAllFlashcardsForUser(user.id);
-        }
+        const cards = await fetchFlashcardsForLecture(lectureId);
 
         if (!mounted) return;
         setFlashcards(cards);
@@ -96,7 +67,7 @@ export function useFlashcards(): UseFlashcardsReturn {
     return () => {
       mounted = false;
     };
-  }, [user?.id, activeLectureId, retryCounter]);
+  }, [user?.id, lectureId, retryCounter]);
 
   const goNext = useCallback(() => {
     setIsFlipped(false);
@@ -120,13 +91,11 @@ export function useFlashcards(): UseFlashcardsReturn {
     error,
     currentIndex,
     isFlipped,
-    activeLectureId,
     setCurrentIndex,
     goNext,
     goPrev,
     flip,
     setFlipped: setIsFlipped,
     retry,
-    setLectureId,
   };
 }
