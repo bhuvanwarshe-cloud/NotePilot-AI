@@ -20,7 +20,7 @@ import {
 
 import {
   quizPrompt,
-} from "./prompts/quiz.prompt";
+} from "./quiz.prompt";
 
 import {
   AIJsonParser,
@@ -271,26 +271,33 @@ ${serializedKnowledge}`;
       ].join("\n\n");
 
 
-    const generatedText =
+    const response =
 
-      await provider.generate({
+  await provider.generateContent({
 
-        systemPrompt:
-          system,
+    prompt:
 
-        taskPrompt:
-          task,
+`${system}
 
-        model:
-          aiConfig.model,
+${task}`,
 
-        temperature:
-          aiConfig.temperature,
+    model:
+      aiConfig.model,
 
-        maxTokens:
-          aiConfig.maxTokens,
+    temperature:
+      aiConfig.temperature,
 
-      });
+    maxOutputTokens:
+      aiConfig.maxTokens,
+
+    responseMimeType:
+      "application/json",
+
+  });
+
+
+const generatedText =
+  response.text;
 
 
     const quiz =
@@ -316,7 +323,7 @@ ${serializedKnowledge}`;
           lectureId,
 
         "Provider":
-          provider.providerName,
+        response.provider,
 
         "Model":
           aiConfig.model,
