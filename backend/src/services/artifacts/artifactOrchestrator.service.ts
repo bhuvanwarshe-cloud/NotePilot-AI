@@ -22,6 +22,14 @@ import type {
   KnowledgeRepresentation,
 } from '../sourceUnderstanding/sourceUnderstanding.service';
 
+import {
+
+  AssessmentEngine,
+
+} from "../assessments/assessmentEngine";
+
+const assessmentEngine =
+  new AssessmentEngine();
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Options
@@ -50,11 +58,11 @@ export interface GenerateArtifactsOptions {
 
 export interface GeneratedArtifactsResult {
 
-  noteId:
-    string;
+  noteId: string;
 
-  flashcardsCount:
-    number;
+  flashcardsCount: number;
+
+  quizQuestions: number;
 
 }
 
@@ -149,21 +157,7 @@ export async function generateKnowledgeArtifacts(
     // Flashcards
     // ------------------------------------------------------------------------
 
-    await updateAIJobStatus(
-
-      supabase,
-
-      aiJobId,
-
-      'processing',
-
-      'flashcards_generation',
-
-      97
-
-    );
-
-
+   
     const flashcards =
       await generateFlashcardsFromKnowledgeRepresentation({
 
@@ -176,6 +170,35 @@ export async function generateKnowledgeArtifacts(
       });
 
 
+await updateAIJobStatus(
+
+  supabase,
+
+  aiJobId,
+
+  "processing",
+
+  "quiz_generation",
+
+  99,
+
+);
+      // --------------------------------------------------------------------------
+// Quiz
+// --------------------------------------------------------------------------
+
+// ------------------------------------------------------------------------
+// Quiz
+// ------------------------------------------------------------------------
+
+const quiz =
+  await assessmentEngine.generateQuizFromKnowledge(
+    supabase,
+    lectureId,
+    knowledge,
+  );
+
+
     log.success(
 
       'ArtifactOrchestrator',
@@ -184,31 +207,40 @@ export async function generateKnowledgeArtifacts(
 
       {
 
-        'Lecture ID':
-          lectureId,
+  "Lecture ID":
+    lectureId,
 
-        'Note ID':
-          notesResult.noteId,
+  "Note ID":
+    notesResult.noteId,
 
-        'Flashcards':
-          String(
-            flashcards.length
-          ),
+  "Flashcards":
+    String(
+      flashcards.length,
+    ),
 
-      }
+  "Quiz Questions":
+    String(
+      quiz.questions.length,
+    ),
+
+}
 
     );
+    
+   
 
+   return {
 
-    return {
+  noteId:
+    notesResult.noteId,
 
-      noteId:
-        notesResult.noteId,
+  flashcardsCount:
+    flashcards.length,
 
-      flashcardsCount:
-        flashcards.length,
+  quizQuestions:
+    quiz.questions.length,
 
-    };
+};
 
   }
 

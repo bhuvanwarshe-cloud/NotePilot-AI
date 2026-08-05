@@ -116,7 +116,7 @@ export function RecentUploads({ uploads }: RecentUploadsProps) {
     }
   };
 
-  // Show only the 4 most recent uploads in the sidebar widget
+
   const displayUploads = uploads.slice(0, 4);
 
   return (

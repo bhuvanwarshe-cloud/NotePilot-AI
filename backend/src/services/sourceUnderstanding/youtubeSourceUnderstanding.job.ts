@@ -722,11 +722,14 @@ log.success(
         knowledgeRepresentationId:
           persisted.id,
 
-       noteId:
+   noteId:
   artifacts.noteId,
 
 flashcardsCount:
   artifacts.flashcardsCount,
+
+quizQuestions:
+  artifacts.quizQuestions, 
 
         videoId,
 
@@ -762,7 +765,7 @@ flashcardsCount:
 
     log.success(
       'YouTubeSourceUnderstandingJob',
-      'YouTube source understanding and Smart Notes generation completed',
+      'YouTube source understanding and knowledge artifact generation completed',
       {
 
         'Lecture ID':
@@ -779,7 +782,12 @@ flashcardsCount:
 
 'Flashcards':
   String(
-    artifacts.flashcardsCount
+    artifacts.flashcardsCount,
+  ),
+
+'Quiz Questions':
+  String(
+    artifacts.quizQuestions,
   ),
         'Duration':
           `${totalProcessingTimeMs}ms`,

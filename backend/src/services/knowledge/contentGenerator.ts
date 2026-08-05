@@ -4,7 +4,7 @@ import { philosophyPrompt } from './prompts/shared/philosophy.prompt';
 import { formattingPrompt } from './prompts/shared/formatting.prompt';
 
 import { aiConfig } from './ai.config';
-
+import { AIJsonParser } from "../ai/json/aiJsonParser";
 import { ProviderRouter } from './providers/provider.router';
 
 import type {
@@ -284,15 +284,13 @@ async generateFlashcardsFromKnowledge(
     maxTokens: aiConfig.maxTokens,
   });
 
-const cleaned = generatedText
-  .replace(/^```json\s*/i, "")
-  .replace(/^```\s*/i, "")
-  .replace(/```$/i, "")
-  .trim();
-
 const flashcards =
-  FlashcardsSchema.parse(
-    JSON.parse(cleaned)
+  AIJsonParser.parse(
+
+    generatedText,
+
+    FlashcardsSchema,
+
   );
 
   return flashcards;
