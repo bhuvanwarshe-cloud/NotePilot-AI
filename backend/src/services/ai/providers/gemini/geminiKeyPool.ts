@@ -46,52 +46,89 @@ export class GeminiKeyPool {
   // Load all configured keys
   // ---------------------------------------------------------------------------
 
-  private loadKeys(): APIKeyInfo[] {
+ private loadKeys(): APIKeyInfo[] {
 
-    const keys: APIKeyInfo[] = [];
+  const keys: APIKeyInfo[] = [];
 
-    let index = 1;
+  // -------------------------------------------------------------------------
+  // Legacy single API key support
+  // -------------------------------------------------------------------------
 
-    while (true) {
+  const legacyKey =
+    process.env.GEMINI_API_KEY;
 
-      const value =
-        process.env[`GEMINI_API_KEY_${index}`];
+  if (
 
-      if (value === undefined) {
+    legacyKey &&
 
-        break;
+    legacyKey.trim().length > 0
 
-      }
+  ) {
 
-      if (value.trim().length > 0) {
+    keys.push({
 
-        keys.push({
+      key:
+        legacyKey.trim(),
 
-          key: value.trim(),
+      index:
+        1,
 
-          index,
-
-        });
-
-      }
-
-      index++;
-
-    }
-
-    if (keys.length === 0) {
-
-      throw new Error(
-
-        'No Gemini API keys configured.'
-
-      );
-
-    }
-
-    return keys;
+    });
 
   }
+
+  // -------------------------------------------------------------------------
+  // Multi-key support
+  // -------------------------------------------------------------------------
+
+  let index = 1;
+
+  while (true) {
+
+    const value =
+      process.env[`GEMINI_API_KEY_${index}`];
+
+    if (value === undefined) {
+
+      break;
+
+    }
+
+    if (
+
+      value.trim().length > 0
+
+    ) {
+
+      keys.push({
+
+        key:
+          value.trim(),
+
+        index:
+          keys.length + 1,
+
+      });
+
+    }
+
+    index++;
+
+  }
+
+  if (keys.length === 0) {
+
+    throw new Error(
+
+      "No Gemini API keys configured."
+
+    );
+
+  }
+
+  return keys;
+
+}
 
   // ---------------------------------------------------------------------------
   // Total keys
