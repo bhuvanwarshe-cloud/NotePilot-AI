@@ -1,6 +1,10 @@
 import {
-  ProviderRouter,
+ProviderRouter,
 } from "../../ai/providerRouter";
+
+import {
+AIProvider,
+} from "../../ai/types";
 
 import {
   aiConfig,
@@ -254,8 +258,10 @@ ${serializedKnowledge}`;
 
   ): Promise<QuizDTO> {
 
-    const provider =
-      this.providerRouter.createProvider();
+   const provider =
+  this.providerRouter.createProvider(
+    AIProvider.GROQ
+  );
 
 
     const system =
