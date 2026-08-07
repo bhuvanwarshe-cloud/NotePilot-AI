@@ -282,7 +282,7 @@ ${serializedKnowledge}`;
 ${task}`,
 
     model:
-      aiConfig.model,
+    aiConfig.quiz.model,
 
     temperature:
       aiConfig.temperature,
@@ -325,8 +325,8 @@ const generatedText =
         "Provider":
         response.provider,
 
-        "Model":
-          aiConfig.model,
+       "model":
+    aiConfig.quiz.model,
 
         "Questions":
           String(

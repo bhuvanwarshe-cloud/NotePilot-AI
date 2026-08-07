@@ -292,7 +292,7 @@ const response: AIResponse =
 ${task}`,
 
     model:
-      aiConfig.model,
+  aiConfig.flashcards.model,
 
     temperature:
       aiConfig.temperature,
@@ -353,8 +353,8 @@ const flashcards =
 
 ${task}`,
 
-    model:
-      aiConfig.model,
+  model:
+  aiConfig.notes.model,
 
     temperature:
       aiConfig.temperature,
@@ -398,9 +398,9 @@ const generatedText =
 
       provider:
     response.provider,
-    
+
       model:
-        aiConfig.model,
+  aiConfig.notes.model,
 
       systemPromptVersion:
         aiConfig.promptVersions.system,

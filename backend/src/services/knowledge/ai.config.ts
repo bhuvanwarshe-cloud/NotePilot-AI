@@ -3,40 +3,72 @@
  * AI Configuration
  * ============================================================================
  *
- * Central AI configuration shared across the backend.
+ * Central configuration for all AI tasks.
  *
- * Current Default Provider:
- *
- * ✓ Gemini
- *
- * Future:
- *
- * ✓ OpenAI
- * ✓ Groq
- * ✓ Claude
+ * Each task may use a different provider and model.
  * ============================================================================
  */
 
 export const aiConfig = {
 
-  provider:
-    process.env.AI_PROVIDER ??
-    "gemini",
+  sourceUnderstanding: {
 
-  model:
-    process.env.AI_MODEL ??
-    "gemini-3.5-flash",
+    provider:
+      process.env.SOURCE_UNDERSTANDING_PROVIDER ??
+      "gemini",
+
+    model:
+      process.env.SOURCE_UNDERSTANDING_MODEL ??
+      "gemini-2.5-flash",
+
+  },
+
+  notes: {
+
+    provider:
+      process.env.NOTES_PROVIDER ??
+      "groq",
+
+    model:
+      process.env.NOTES_MODEL ??
+      "llama-3.3-70b-versatile",
+
+  },
+
+  flashcards: {
+
+    provider:
+      process.env.FLASHCARDS_PROVIDER ??
+      "groq",
+
+    model:
+      process.env.FLASHCARDS_MODEL ??
+      "llama-3.3-70b-versatile",
+
+  },
+
+  quiz: {
+
+    provider:
+      process.env.QUIZ_PROVIDER ??
+      "groq",
+
+    model:
+      process.env.QUIZ_MODEL ??
+      "llama-3.3-70b-versatile",
+
+  },
 
   temperature:
     Number(
       process.env.AI_TEMPERATURE ??
-      0.2,
+      0.2
     ),
 
   maxTokens:
     Number(
       process.env.AI_MAX_TOKENS ??
-      1800,
+      1800
     ),
 
   promptVersions: {
@@ -56,6 +88,3 @@ export const aiConfig = {
   },
 
 };
-
-export type SupportedAiProvider =
-  "gemini";
