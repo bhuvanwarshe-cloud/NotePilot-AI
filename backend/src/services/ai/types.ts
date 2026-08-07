@@ -17,8 +17,11 @@
  */
 
 export enum AIProvider {
-  GEMINI = 'gemini',
-  OPENAI = 'openai',
+  GEMINI = "gemini",
+
+  GROQ = "groq",
+
+  OPENAI = "openai",
 }
 
 export interface AIRequest {

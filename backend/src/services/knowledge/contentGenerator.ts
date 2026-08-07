@@ -5,7 +5,12 @@ import { formattingPrompt } from './prompts/shared/formatting.prompt';
 
 import { aiConfig } from './ai.config';
 import { AIJsonParser } from "../ai/json/aiJsonParser";
-import { ProviderRouter } from './providers/provider.router';
+import { ProviderRouter } from "../ai/providerRouter";
+
+import {
+  AIProvider,
+  type AIResponse,
+} from "../ai/types";
 
 import type {
   GenerationMetadata,
@@ -276,13 +281,32 @@ async generateFlashcardsFromKnowledge(
     formattingPrompt,
   ].join("\n\n");
 
-  const generatedText = await provider.generate({
-    systemPrompt: system,
-    taskPrompt: task,
-    model: aiConfig.model,
-    temperature: aiConfig.temperature,
-    maxTokens: aiConfig.maxTokens,
+const response: AIResponse =
+
+  await provider.generateContent({
+
+    prompt:
+
+`${system}
+
+${task}`,
+
+    model:
+      aiConfig.model,
+
+    temperature:
+      aiConfig.temperature,
+
+    maxOutputTokens:
+      aiConfig.maxTokens,
+
+    responseMimeType:
+      "application/json",
+
   });
+
+const generatedText =
+  response.text;
 
 const flashcards =
   AIJsonParser.parse(
@@ -306,7 +330,9 @@ const flashcards =
   }> {
 
     const provider =
-      this.providerRouter.createProvider();
+  this.providerRouter.createProvider(
+    AIProvider.GROQ
+  );
 
 
     const system =
@@ -317,25 +343,29 @@ const flashcards =
       ].join('\n\n');
 
 
-    const generatedText =
-      await provider.generate({
+   const response: AIResponse =
 
-        systemPrompt:
-          system,
+  await provider.generateContent({
 
-        taskPrompt:
-          task,
+    prompt:
 
-        model:
-          aiConfig.model,
+`${system}
 
-        temperature:
-          aiConfig.temperature,
+${task}`,
 
-        maxTokens:
-          aiConfig.maxTokens,
+    model:
+      aiConfig.model,
 
-      });
+    temperature:
+      aiConfig.temperature,
+
+    maxOutputTokens:
+      aiConfig.maxTokens,
+
+  });
+
+const generatedText =
+  response.text;
 
 
     const formattedContent =
@@ -367,8 +397,8 @@ const flashcards =
     const metadata: GenerationMetadata = {
 
       provider:
-        provider.providerName,
-
+    response.provider,
+    
       model:
         aiConfig.model,
 

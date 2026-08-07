@@ -11,16 +11,6 @@
  * • Hide provider implementations from the rest of the application
  * • Allow future provider expansion
  *
- * Current Providers:
- *
- * ✓ Gemini
- *
- * Future:
- *
- * ✓ OpenAI
- * ✓ Claude
- * ✓ Grok
- * ✓ DeepSeek
  * ============================================================================
  */
 
@@ -28,36 +18,52 @@ import {
   GeminiProvider,
 } from "./providers/geminiProvider";
 
-import type {
+import {
+  GroqProvider,
+} from "./providers/groqProvider";
+
+import {
+  AIProvider,
   AIProviderInterface,
 } from "./types";
 
 
-
 export class ProviderRouter {
 
-  // ---------------------------------------------------------------------------
-  // Provider Factory
-  // ---------------------------------------------------------------------------
-
   /**
-   * Returns the configured AI provider.
+   * Returns the requested AI provider.
    *
-   * Currently:
-   *
-   *   Gemini
-   *
-   * Future:
-   *
-   *   Environment variables
-   *   User preferences
-   *   Cost routing
-   *   Automatic failover
+   * If no provider is supplied, the provider configured in
+   * AI_PROVIDER is used.
    */
+  public createProvider(
+    provider?: AIProvider
+  ): AIProviderInterface {
 
-  public createProvider(): AIProviderInterface {
+    const selectedProvider =
+      provider ??
+      (
+        process.env.AI_PROVIDER as AIProvider ??
+        AIProvider.GEMINI
+      );
 
-    return new GeminiProvider();
+    switch (selectedProvider) {
+
+      case AIProvider.GEMINI:
+
+        return new GeminiProvider();
+
+      case AIProvider.GROQ:
+
+        return new GroqProvider();
+
+      default:
+
+        throw new Error(
+          `Unsupported AI provider: ${selectedProvider}`
+        );
+
+    }
 
   }
 
