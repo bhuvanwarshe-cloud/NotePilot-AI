@@ -32,8 +32,8 @@ import {
 } from '@google/genai';
 
 import {
-  KNOWLEDGE_EXTRACTION_SYSTEM_PROMPT,
-} from '../../knowledgeRepresentation/extraction.prompt';
+  buildYouTubeKnowledgeExtractionPrompt,
+} from '../prompts/youtubeKnowledgeExtraction.prompt';
 
 import {
   safeValidateKnowledgeExtraction,
@@ -185,10 +185,10 @@ export class GeminiYouTubeProvider {
                     },
                   },
 
-                  {
-                    text:
-                      buildExtractionPrompt(),
-                  },
+                {
+  text:
+    buildYouTubeKnowledgeExtractionPrompt(),
+},
 
                 ],
 
@@ -502,187 +502,7 @@ export class GeminiYouTubeProvider {
 // Prompt Builder
 // ─────────────────────────────────────────────────────────────────────────────
 
-function buildExtractionPrompt(): string {
 
-  return `
-${KNOWLEDGE_EXTRACTION_SYSTEM_PROMPT}
-
-
-============================================================
-REQUIRED JSON SHAPE
-============================================================
-
-Return one valid JSON object with exactly this conceptual structure:
-
-{
-  "title": "string",
-
-  "language": "ISO 639-1 language code",
-
-  "overview": "string",
-
-  "durationSeconds": 0,
-
-  "author": "string",
-
-  "topics": [
-    {
-      "id": "topic_example",
-
-      "title": "string",
-
-      "explanation": "string",
-
-      "keyPoints": [
-        {
-          "id": "point_example",
-
-          "text": "string",
-
-          "sourceReference": {
-            "timestampSeconds": 0,
-            "label": "00:00"
-          }
-        }
-      ],
-
-      "conceptIds": [],
-
-      "definitionIds": [],
-
-      "formulaIds": [],
-
-      "exampleIds": [],
-
-      "visualInsightIds": [],
-
-      "sourceReferences": []
-    }
-  ],
-
-  "concepts": [
-    {
-      "id": "concept_example",
-
-      "name": "string",
-
-      "explanation": "string",
-
-      "relatedConceptIds": [],
-
-      "sourceReferences": []
-    }
-  ],
-
-  "definitions": [
-    {
-      "id": "definition_example",
-
-      "term": "string",
-
-      "definition": "string",
-
-      "sourceReferences": []
-    }
-  ],
-
-  "formulas": [
-    {
-      "id": "formula_example",
-
-      "expression": "string",
-
-      "name": "string",
-
-      "explanation": "string",
-
-      "variables": [
-        {
-          "symbol": "string",
-          "meaning": "string",
-          "unit": "string"
-        }
-      ],
-
-      "sourceReferences": []
-    }
-  ],
-
-  "examples": [
-    {
-      "id": "example_example",
-
-      "title": "string",
-
-      "description": "string",
-
-      "relatedConceptIds": [],
-
-      "sourceReferences": []
-    }
-  ],
-
-  "visualInsights": [
-    {
-      "id": "visual_example",
-
-      "type": "diagram",
-
-      "description": "string",
-
-      "educationalSignificance": "string",
-
-      "relatedConceptIds": [],
-
-      "sourceReferences": []
-    }
-  ],
-
-  "timeline": [
-    {
-      "id": "timeline_example",
-
-      "timestampSeconds": 0,
-
-      "label": "string",
-
-      "description": "string",
-
-      "relatedTopicIds": [],
-
-      "relatedConceptIds": []
-    }
-  ]
-}
-
-
-IMPORTANT:
-
-1. Return ONLY valid JSON.
-
-2. Do not wrap the JSON in Markdown code fences.
-
-3. Use empty arrays when a category has no supported items.
-
-4. Do not invent formulas, definitions, examples, timestamps, or visual content.
-
-5. Every referenced ID MUST exist in the corresponding array.
-
-6. Every ID across topics, key points, concepts, definitions, formulas,
-   examples, visual insights, and timeline entries MUST be globally unique.
-
-7. Use descriptive lowercase snake_case IDs with the correct type prefix.
-
-8. Do not include null values. Omit optional scalar fields when unknown.
-
-9. durationSeconds must be a number when included.
-
-10. timestampSeconds must be numeric seconds, not strings.
-
-Analyze the provided video now and return the structured extraction.
-`.trim();
-
-}
 
 
 // ─────────────────────────────────────────────────────────────────────────────
