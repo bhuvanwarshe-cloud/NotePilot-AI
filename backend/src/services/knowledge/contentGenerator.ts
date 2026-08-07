@@ -273,7 +273,10 @@ async generateFlashcardsFromKnowledge(
 
   const task = buildFlashcardsPrompt(knowledge);
 
-  const provider = this.providerRouter.createProvider();
+  const provider =
+  this.providerRouter.createProvider(
+    AIProvider.GROQ
+  );
 
   const system = [
     systemPrompt,
