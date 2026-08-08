@@ -49,15 +49,21 @@ export const aiConfig = {
 
   quiz: {
 
-    provider:
-      process.env.QUIZ_PROVIDER ??
-      "groq",
+  provider:
+    process.env.QUIZ_PROVIDER ??
+    "groq",
 
-    model:
-      process.env.QUIZ_MODEL ??
-      "llama-3.3-70b-versatile",
+  model:
+    process.env.QUIZ_MODEL ??
+    "llama-3.3-70b-versatile",
 
-  },
+  maxTokens:
+    Number(
+      process.env.QUIZ_MAX_TOKENS ??
+      5000
+    ),
+
+},
 
   temperature:
     Number(

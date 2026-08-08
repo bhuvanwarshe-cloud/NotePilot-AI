@@ -294,7 +294,7 @@ ${task}`,
       aiConfig.temperature,
 
     maxOutputTokens:
-      aiConfig.maxTokens,
+  aiConfig.quiz.maxTokens,
 
     responseMimeType:
       "application/json",
