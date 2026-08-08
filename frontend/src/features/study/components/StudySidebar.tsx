@@ -122,9 +122,9 @@ export function StudySidebar({
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 8px', fontSize: 11, color: 'var(--np-text-secondary)', alignItems: 'center' }}>
                     <span style={{ fontWeight: 600 }}>{item.type.replace('Processor', '')}</span>
                     <span>•</span>
-                    <span style={{ color: item.status === 'completed' ? '#10B981' : 'var(--np-text-secondary)', display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <span style={{ color: (item.status === 'completed' || item.status === 'transcribed') ? '#10B981' : 'var(--np-text-secondary)', display: 'flex', alignItems: 'center', gap: 3 }}>
                       <CheckCircle2 size={10} />
-                      {item.status === 'completed' ? 'Completed' : 'Processing'}
+                      {(item.status === 'completed' || item.status === 'transcribed') ? 'Completed' : 'Processing'}
                     </span>
                     {item.readingTime && (
                       <>

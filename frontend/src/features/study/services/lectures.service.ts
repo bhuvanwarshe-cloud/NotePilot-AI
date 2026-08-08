@@ -24,7 +24,7 @@ export async function fetchStudyLecturesForUser(userId: string): Promise<StudyLe
       status
     `)
     .eq('user_id', userId)
-    .eq('status', 'completed')
+    .in('status', ['completed', 'transcribed'])
     .order('created_at', { ascending: false });
 
   if (error) {
