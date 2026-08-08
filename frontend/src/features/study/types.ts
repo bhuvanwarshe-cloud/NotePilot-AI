@@ -7,6 +7,9 @@ export interface StudyLecture {
   createdAt: string;
   status: string;
   readingTime?: number;
+  hasNotes?: boolean;
+  hasFlashcards?: boolean;
+  hasQuiz?: boolean;
 }
 
 export interface StudyNote {

@@ -120,8 +120,10 @@ export function useStudyNotes() {
     [filteredNotes, workspaceState.selectedNoteId]
   );
 
-  const setSelectedNoteId = (noteId: string) => {
-    setWorkspaceState((current) => ({ ...current, selectedNoteId: noteId, view: 'reader' }));
+  const setSelectedNoteId = (id: string) => {
+    const matchingNote = notes.find(n => n.id === id || n.lectureId === id);
+    const targetId = matchingNote?.id ?? id;
+    setWorkspaceState((current) => ({ ...current, selectedNoteId: targetId, view: 'reader' }));
   };
 
   const setSearchQuery = (value: string) => {

@@ -21,17 +21,20 @@ export async function fetchStudyLecturesForUser(userId: string): Promise<StudyLe
       thumbnail_url,
       language,
       created_at,
-      status
+      status,
+      notes (id),
+      flashcards (id),
+      quizzes (id)
     `)
     .eq('user_id', userId)
-    .in('status', ['completed', 'transcribed'])
+    .neq('status', 'failed')
     .order('created_at', { ascending: false });
 
   if (error) {
     throw new Error(error.message);
   }
 
-  return (data || []).map((row) => ({
+  return (data || []).map((row: any) => ({
     id: row.id,
     title: row.title || 'Untitled Lecture',
     type: normalizeLectureType(row.type),
@@ -39,5 +42,8 @@ export async function fetchStudyLecturesForUser(userId: string): Promise<StudyLe
     language: row.language || 'en',
     createdAt: row.created_at,
     status: normalizeStatus(row.status),
+    hasNotes: Array.isArray(row.notes) && row.notes.length > 0,
+    hasFlashcards: Array.isArray(row.flashcards) && row.flashcards.length > 0,
+    hasQuiz: Array.isArray(row.quizzes) && row.quizzes.length > 0,
   }));
 }

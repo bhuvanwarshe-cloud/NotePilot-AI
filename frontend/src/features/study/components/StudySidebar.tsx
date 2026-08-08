@@ -140,31 +140,49 @@ export function StudySidebar({
                 </div>
               </div>
 
-              {/* Badges / Features Footer */}
+              {/* Dynamic Badges / Features Footer */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4, width: '100%' }}>
+                {/* Available artifacts */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--np-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Contains</span>
-                  <div style={{ display: 'flex', gap: 4 }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(16, 185, 129, 0.1)', color: '#10B981', padding: '2px 8px', borderRadius: 999, fontSize: 10, fontWeight: 600 }}>
-                      <CheckCircle2 size={10} /> Notes
-                    </span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(16, 185, 129, 0.1)', color: '#10B981', padding: '2px 8px', borderRadius: 999, fontSize: 10, fontWeight: 600 }}>
-                      <CheckCircle2 size={10} /> Flashcards
-                    </span>
+                  <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                    {(item.hasNotes !== false) && (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(16, 185, 129, 0.1)', color: '#10B981', padding: '2px 8px', borderRadius: 999, fontSize: 10, fontWeight: 600 }}>
+                        <CheckCircle2 size={10} /> Notes
+                      </span>
+                    )}
+                    {item.hasFlashcards && (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(16, 185, 129, 0.1)', color: '#10B981', padding: '2px 8px', borderRadius: 999, fontSize: 10, fontWeight: 600 }}>
+                        <CheckCircle2 size={10} /> Flashcards
+                      </span>
+                    )}
+                    {item.hasQuiz && (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(139, 92, 246, 0.1)', color: '#8B5CF6', padding: '2px 8px', borderRadius: 999, fontSize: 10, fontWeight: 600 }}>
+                        <CheckCircle2 size={10} /> Quiz
+                      </span>
+                    )}
+                    {item.hasNotes === false && !item.hasFlashcards && !item.hasQuiz && (
+                      <span style={{ fontSize: 10, color: 'var(--np-text-muted)', fontStyle: 'italic' }}>Generating...</span>
+                    )}
                   </div>
                 </div>
                 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--np-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Soon</span>
-                  <div style={{ display: 'flex', gap: 4 }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 3, background: 'var(--np-bg-secondary)', color: 'var(--np-text-muted)', padding: '2px 8px', borderRadius: 999, fontSize: 10, fontWeight: 500 }}>
-                      <Lock size={9} /> Exam Strategy
-                    </span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 3, background: 'var(--np-bg-secondary)', color: 'var(--np-text-muted)', padding: '2px 8px', borderRadius: 999, fontSize: 10, fontWeight: 500 }}>
-                      <Lock size={9} /> Quiz
-                    </span>
+                {/* Upcoming / Not generated yet */}
+                {(!item.hasQuiz || true) && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--np-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Soon</span>
+                    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                      {!item.hasQuiz && (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 3, background: 'var(--np-bg-secondary)', color: 'var(--np-text-muted)', padding: '2px 8px', borderRadius: 999, fontSize: 10, fontWeight: 500 }}>
+                          <Lock size={9} /> Quiz
+                        </span>
+                      )}
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 3, background: 'var(--np-bg-secondary)', color: 'var(--np-text-muted)', padding: '2px 8px', borderRadius: 999, fontSize: 10, fontWeight: 500 }}>
+                        <Lock size={9} /> Exam Strategy
+                      </span>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </button>
           );

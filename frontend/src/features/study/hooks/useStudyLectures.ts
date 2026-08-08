@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/lib/supabase';
 import { fetchStudyLecturesForUser } from '@/features/study/services/lectures.service';
 import type { StudyLecture } from '@/features/study/types';
 
@@ -10,7 +11,7 @@ export function useStudyLectures() {
   const [lectures, setLectures] = useState<StudyLecture[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const lectureIdFromUrl = searchParams.get('lectureId');
 
   const [selectedLectureId, setSelectedLectureIdState] = useState<string | null>(null);
@@ -18,32 +19,26 @@ export function useStudyLectures() {
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest' | 'alphabetical'>('newest');
   const [view, setView] = useState<'list' | 'reader'>('list');
 
-  useEffect(() => {
-    let mounted = true;
+  const loadLectures = useCallback(async () => {
+    if (!user?.id) {
+      setLectures([]);
+      setLoading(false);
+      return;
+    }
 
-    async function loadLectures() {
-      if (!user?.id) {
-        setLectures([]);
-        setLoading(false);
-        return;
-      }
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await fetchStudyLecturesForUser(user.id);
+      setLectures(data);
 
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await fetchStudyLecturesForUser(user.id);
-        if (!mounted) return;
-        setLectures(data);
-
-        let initialLectureId = selectedLectureId;
+      setSelectedLectureIdState((current) => {
+        let initialLectureId = current;
 
         if (lectureIdFromUrl) {
           const matchingLecture = data.find(l => l.id === lectureIdFromUrl);
           if (matchingLecture) {
             initialLectureId = matchingLecture.id;
-            // Clean up URL after grabbing the ID
-            searchParams.delete('lectureId');
-            setSearchParams(searchParams, { replace: true });
           }
         }
 
@@ -51,26 +46,52 @@ export function useStudyLectures() {
           ? initialLectureId
           : data[0]?.id ?? null;
 
-        setSelectedLectureIdState(newSelectedId);
         if (newSelectedId) {
           setView('reader');
-        } else {
-          setView('list');
         }
-      } catch (err) {
-        if (!mounted) return;
-        setError(err instanceof Error ? err.message : 'Unable to load lectures.');
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    }
 
+        return newSelectedId;
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to load lectures.');
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id, lectureIdFromUrl]);
+
+  useEffect(() => {
     loadLectures();
 
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel(`study-lectures-realtime-${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'lectures', filter: `user_id=eq.${user.id}` },
+        () => { loadLectures(); }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'notes' },
+        () => { loadLectures(); }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'flashcards' },
+        () => { loadLectures(); }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'quizzes' },
+        () => { loadLectures(); }
+      )
+      .subscribe();
+
     return () => {
-      mounted = false;
+      supabase.removeChannel(channel);
     };
-  }, [user?.id]);
+  }, [user?.id, loadLectures]);
 
   const filteredLectures = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();

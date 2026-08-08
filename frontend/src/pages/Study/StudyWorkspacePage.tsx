@@ -67,7 +67,7 @@ export function StudyWorkspacePage() {
           <div style={{ minWidth: 0 }}>
             <StudySidebar
               items={notes.map(note => ({
-                id: note.id,
+                id: note.lectureId,
                 title: note.lectureTitle,
                 type: note.lectureType,
                 thumbnailUrl: note.lectureThumbnailUrl,
@@ -75,8 +75,9 @@ export function StudyWorkspacePage() {
                 createdAt: note.createdAt,
                 status: note.status,
                 readingTime: note.readingTime,
+                hasNotes: true,
               }))}
-              selectedId={selectedNoteId}
+              selectedId={selectedNote?.lectureId ?? selectedNoteId}
               searchQuery={searchQuery}
               sortOrder={sortOrder}
               onSelect={setSelectedNoteId}
