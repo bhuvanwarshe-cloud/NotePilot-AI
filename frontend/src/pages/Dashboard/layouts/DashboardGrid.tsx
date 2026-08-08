@@ -2,22 +2,12 @@ import type { ReactNode } from 'react';
 
 /**
  * DashboardGrid
- * The outermost content wrapper.
- * max-width: 1600px, centered, padding: 32px on all sides.
- * All children are stacked in a column with 32px gap.
+ * Outer wrapper for the dashboard page content.
+ * Responsive padding via .np-dashboard-grid class (defined in index.css).
  */
 export function DashboardGrid({ children }: { children: ReactNode }) {
   return (
-    <div
-      style={{
-        maxWidth: 1600,
-        margin: '0 auto',
-        padding: 32,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 28,
-      }}
-    >
+    <div className="np-dashboard-grid">
       {children}
     </div>
   );
@@ -25,19 +15,12 @@ export function DashboardGrid({ children }: { children: ReactNode }) {
 
 /**
  * DashboardMainGrid
- * A strict 12-column CSS grid for the main content area.
- * Use col-span utilities on children.
+ * Responsive 12-col → 2-col → 1-col grid.
+ * Column spans on children use .np-col-8 / .np-col-4 classes.
  */
 export function DashboardMainGrid({ children }: { children: ReactNode }) {
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(12, 1fr)',
-        gap: 24,
-        alignItems: 'start',
-      }}
-    >
+    <div className="np-main-grid">
       {children}
     </div>
   );
@@ -45,8 +28,8 @@ export function DashboardMainGrid({ children }: { children: ReactNode }) {
 
 /**
  * DashboardCol
- * A grid column child. Specify colSpan for desktop, colSpanMd for tablet.
- * Falls back to full-width on mobile.
+ * A grid column child.  colSpan drives the className for desktop;
+ * on mobile all columns become full-width via CSS.
  */
 export function DashboardCol({
   children,
@@ -58,11 +41,9 @@ export function DashboardCol({
   className?: string;
 }) {
   return (
-    <div
-      className={className}
-      style={{ gridColumn: `span ${colSpan}` }}
-    >
+    <div className={`np-col-${colSpan} ${className}`.trim()}>
       {children}
     </div>
   );
 }
+

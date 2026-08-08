@@ -41,17 +41,11 @@ export function DashboardHero() {
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
+      className="np-hero"
       style={{
-        display: 'grid',
-        gridTemplateColumns: '3fr 2fr',     /* Guaranteed 60 / 40 split */
-        minHeight: 400,
-        maxHeight: 440,
-        borderRadius: 20,
-        overflow: 'hidden',
         background: 'var(--np-surface)',
         border: '1px solid var(--np-border)',
         boxShadow: 'var(--np-shadow-card)',
-        /* Very subtle dual-radial tint — almost invisible */
         backgroundImage:
           'radial-gradient(ellipse 80% 100% at 10% 60%, rgba(59,130,246,0.05) 0%, transparent 65%),' +
           'radial-gradient(ellipse 60% 80% at 90% 10%, rgba(139,92,246,0.04) 0%, transparent 65%)',
@@ -63,7 +57,7 @@ export function DashboardHero() {
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
-          padding: '48px 56px',
+          padding: 'clamp(24px, 5vw, 48px) clamp(20px, 5vw, 56px)',
           gap: 28,
           minWidth: 0,
         }}
@@ -84,7 +78,7 @@ export function DashboardHero() {
           </p>
           <h1
             style={{
-              fontSize: 38,
+              fontSize: 'clamp(24px, 4vw, 38px)',
               fontWeight: 750,
               lineHeight: 1.15,
               letterSpacing: '-0.02em',
@@ -107,7 +101,7 @@ export function DashboardHero() {
           <p
             style={{
               marginTop: 14,
-              fontSize: 16,
+              fontSize: 'clamp(13px, 2vw, 16px)',
               lineHeight: 1.65,
               color: 'var(--np-text-secondary)',
               maxWidth: 420,
@@ -130,10 +124,7 @@ export function DashboardHero() {
                 color: 'var(--np-text-secondary)',
               }}
             >
-              <CheckCircle2
-                size={16}
-                style={{ color: '#10B981', flexShrink: 0 }}
-              />
+              <CheckCircle2 size={16} style={{ color: '#10B981', flexShrink: 0 }} />
               {b}
             </li>
           ))}
@@ -176,7 +167,9 @@ export function DashboardHero() {
       </div>
 
       {/* ── RIGHT PANEL — 40% — Upload dropzone ───────────────────── */}
+      {/* Hidden on tablet/mobile via .np-hero-right in CSS */}
       <div
+        className="np-hero-right"
         style={{
           borderLeft: '1px solid var(--np-border)',
           background: 'var(--np-bg-secondary)',

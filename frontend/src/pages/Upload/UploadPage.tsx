@@ -108,32 +108,12 @@ export function UploadPage() {
   };
 
   return (
-    <div
-      style={{
-        padding: '32px 0',
-        maxWidth: 1600,
-        margin: '0 auto',
-        width: '100%',
-        boxSizing: 'border-box',
-      }}
-    >
+    <div className="np-dashboard-grid" style={{ paddingTop: 32, paddingBottom: 32 }}>
       <UploadHero />
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(12, 1fr)',
-          gap: 32,
-        }}
-      >
-        {/* Left Column - 8 of 12 */}
-        <div
-          style={{
-            gridColumn: 'span 8',
-            display: 'flex',
-            flexDirection: 'column',
-          }}
-        >
+      <div className="np-main-grid" style={{ gap: 32 }}>
+        {/* Left Column — 8 of 12 on desktop, full-width on mobile */}
+        <div className="np-col-8" style={{ display: 'flex', flexDirection: 'column' }}>
           <AnimatePresence mode="wait">
             {!selectedSource ? (
               <motion.div
@@ -189,26 +169,11 @@ export function UploadPage() {
           </AnimatePresence>
         </div>
 
-        {/* Right Column - 4 of 12 (Information Panel) */}
-        <div
-          style={{
-            gridColumn: 'span 4',
-          }}
-        >
+        {/* Right Column — 4 of 12 on desktop, full-width on mobile */}
+        <div className="np-col-4">
           <UploadTips source={selectedSource} />
         </div>
       </div>
-      
-      <style>
-        {`
-          @media (max-width: 1024px) {
-            div[style*="grid-template-columns: repeat(12, 1fr)"] {
-              display: flex !important;
-              flex-direction: column !important;
-            }
-          }
-        `}
-      </style>
     </div>
   );
 }

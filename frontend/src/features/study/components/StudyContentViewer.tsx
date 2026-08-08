@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { StudyNote } from '@/features/study/types';
 import { generateTOC } from '@/features/study/utils/generateTOC';
@@ -16,7 +15,7 @@ interface StudyContentViewerProps {
   onCopy?: (content: string) => void;
 }
 
-export function StudyContentViewer({ note, onBack, isMobile, onCopy }: StudyContentViewerProps) {
+export function StudyContentViewer({ note, isMobile, onCopy }: StudyContentViewerProps) {
   const [progress, setProgress] = useState(0);
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const toc = useMemo(() => (note ? generateTOC(note.markdown) : []), [note]);
@@ -49,21 +48,15 @@ export function StudyContentViewer({ note, onBack, isMobile, onCopy }: StudyCont
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-        {isMobile && onBack && (
-          <button onClick={onBack} style={{ border: '1px solid var(--np-border)', background: 'var(--np-surface)', borderRadius: 999, padding: '8px 10px', cursor: 'pointer', color: 'var(--np-text-primary)' }}>
-            <ArrowLeft size={16} />
-          </button>
-        )}
-        <div style={{ flex: 1 }} />
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '12px 16px', border: '1px solid var(--np-border)', borderRadius: 16, background: 'var(--np-surface)', boxShadow: 'var(--np-shadow-card)', minWidth: 220 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 10, color: 'var(--np-text-muted)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Learning Progress</span>
-            <span style={{ fontSize: 11, color: 'var(--np-text-secondary)', fontWeight: 600 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '12px 16px', border: '1px solid var(--np-border)', borderRadius: 16, background: 'var(--np-surface)', boxShadow: 'var(--np-shadow-card)', minWidth: 0, maxWidth: '100%', flex: '0 1 auto' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontSize: 10, color: 'var(--np-text-muted)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>Learning Progress</span>
+            <span style={{ fontSize: 11, color: 'var(--np-text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>
               {Math.max(1, Math.ceil(note.readingTime * (1 - (progress / 100))))} min left
             </span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 180 }}>
             <div style={{ flex: 1, height: 6, borderRadius: 999, background: 'var(--np-bg-secondary)', overflow: 'hidden' }}>
               <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }} transition={{ duration: 0.25 }} style={{ height: '100%', background: 'linear-gradient(135deg, var(--np-blue), var(--np-purple))', borderRadius: 999 }} />
             </div>

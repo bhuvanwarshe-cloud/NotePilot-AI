@@ -76,11 +76,7 @@ export function QuickStats({ counts }: QuickStatsProps) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: 0.1, ease: 'easeOut' }}
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: 16,
-      }}
+      className="np-quick-stats"
     >
       {STATS.map((stat) => (
         <StatCard key={stat.label} stat={stat} />

@@ -46,24 +46,11 @@ export function DashboardPage() {
       {/* Quick Stats */}
       <QuickStats counts={{ lectureCount, noteCount, flashcardCount }} />
 
-      {/* 12-column main grid */}
+      {/* 12-column main grid (collapses to 1-col on mobile) */}
       <DashboardMainGrid>
-        {/* Left column — 8 of 12 */}
-        <div
-          style={{
-            gridColumn: 'span 8',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 28,
-          }}
-        >
-          {/*
-           * ContinueLearning receives the SAME lectures array as RecentUploads.
-           * It filters internally to only show completed lectures.
-           * Title and thumbnail are guaranteed identical to RecentUploads entries.
-           */}
+        {/* Left column — 8 of 12 on desktop, full-width on mobile/tablet */}
+        <div className="np-col-8" style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
           <ContinueLearning lectures={lectures} />
-
           <TodaysFocus
             items={[]}
             title="Today's Focus"
@@ -72,20 +59,8 @@ export function DashboardPage() {
           />
         </div>
 
-        {/* Right column — 4 of 12 */}
-        <div
-          style={{
-            gridColumn: 'span 4',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 28,
-          }}
-        >
-          {/*
-           * RecentUploads receives the same lectures array.
-           * It shows all statuses (processing, completed, failed, etc.)
-           * and slices to the 4 most recent.
-           */}
+        {/* Right column — 4 of 12 on desktop, full-width on mobile/tablet */}
+        <div className="np-col-4" style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
           <RecentUploads uploads={lectures} />
           <StudyProgress stats={stats} />
         </div>

@@ -65,7 +65,7 @@ export function QuizViewer({ quiz, onComplete }: QuizViewerProps) {
   const optionLetters = ['A', 'B', 'C', 'D'];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', maxWidth: 820, margin: '0 auto', width: '100%', paddingBottom: 40 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', maxWidth: 820, margin: '0 auto', width: '100%', paddingBottom: 40, boxSizing: 'border-box' }}>
       {/* Header & Progress Bar */}
       <div style={{ marginBottom: 28 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
@@ -105,7 +105,7 @@ export function QuizViewer({ quiz, onComplete }: QuizViewerProps) {
               background: 'var(--np-surface)',
               borderRadius: 24,
               border: '1px solid var(--np-border)',
-              padding: '36px 32px',
+              padding: 'clamp(20px, 4vw, 36px) clamp(16px, 4vw, 32px)',
               boxShadow: 'var(--np-shadow-card)',
             }}
           >
@@ -171,8 +171,8 @@ export function QuizViewer({ quiz, onComplete }: QuizViewerProps) {
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 16,
-                      padding: '18px 20px',
+                      gap: 12,
+                      padding: 'clamp(12px, 3vw, 18px) clamp(12px, 3vw, 20px)',
                       borderRadius: 16,
                       background: btnBg,
                       border: btnBorder,
@@ -182,6 +182,7 @@ export function QuizViewer({ quiz, onComplete }: QuizViewerProps) {
                       transition: 'background 0.2s ease, border-color 0.2s ease, color 0.2s ease',
                       width: '100%',
                       boxSizing: 'border-box',
+                      minHeight: 52,
                     }}
                   >
                     {/* Option Badge A, B, C, D */}
@@ -304,7 +305,7 @@ export function QuizViewer({ quiz, onComplete }: QuizViewerProps) {
                   </div>
 
                   {/* Continue Button Section */}
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 24 }}>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 24, flexWrap: 'wrap', gap: 8 }}>
                     {isLastQuestion ? (
                       <button
                         type="button"

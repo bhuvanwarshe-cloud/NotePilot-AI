@@ -8,7 +8,7 @@ interface MarkdownRendererProps {
 
 export function MarkdownRenderer({ markdown }: MarkdownRendererProps) {
   return (
-    <div style={{ color: 'var(--np-text-primary)', lineHeight: 1.8, fontSize: 15 }}>
+    <div style={{ color: 'var(--np-text-primary)', lineHeight: 1.8, fontSize: 15, maxWidth: '100%', overflowX: 'hidden' }}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
