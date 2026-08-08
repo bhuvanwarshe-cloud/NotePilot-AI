@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
-import { CheckCircle2, XCircle, RefreshCw, ArrowRight } from 'lucide-react';
-import type { QuizWithQuestions } from '../types';
+import { CheckCircle2, XCircle, RefreshCw, ArrowRight, Award } from 'lucide-react';
+import type { QuizWithQuestions, QuizQuestion } from '../types';
 
 interface QuizResultsProps {
   quiz: QuizWithQuestions;
@@ -9,14 +9,24 @@ interface QuizResultsProps {
   onRetry: () => void;
 }
 
+function getCorrectOptionId(q: QuizQuestion): string {
+  const matchingById = q.options.find((o) => o.id === q.answer);
+  if (matchingById) return matchingById.id;
+  const matchingByText = q.options.find(
+    (o) => o.text.trim().toLowerCase() === (q.answer || '').trim().toLowerCase()
+  );
+  if (matchingByText) return matchingByText.id;
+  return q.answer;
+}
+
 export function QuizResults({ quiz, score, userAnswers, onRetry }: QuizResultsProps) {
   const total = quiz.questions.length;
   const percentage = Math.round((score / total) * 100);
-  
+
   let message = "Keep studying, you'll get it!";
-  if (percentage >= 90) message = "Outstanding! Perfect understanding.";
+  if (percentage >= 90) message = "Excellent work! Perfect understanding.";
   else if (percentage >= 70) message = "Great job! Solid grasp of the concepts.";
-  else if (percentage >= 50) message = "Good effort! A little more review needed.";
+  else if (percentage >= 50) message = "Good effort — keep practicing.";
 
   return (
     <div style={{ maxWidth: 800, margin: '0 auto', width: '100%', paddingBottom: 60 }}>
@@ -44,11 +54,14 @@ export function QuizResults({ quiz, score, userAnswers, onRetry }: QuizResultsPr
         }}>
           {percentage}%
         </div>
-        
-        <h2 style={{ fontSize: 28, fontWeight: 800, color: 'var(--np-text-primary)', margin: '0 0 8px' }}>
-          {score} out of {total} correct
-        </h2>
-        
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 6 }}>
+          <Award size={22} color="var(--np-blue)" />
+          <h2 style={{ fontSize: 28, fontWeight: 800, color: 'var(--np-text-primary)', margin: 0 }}>
+            {score} out of {total} correct
+          </h2>
+        </div>
+
         <p style={{ fontSize: 16, color: 'var(--np-text-secondary)', margin: '0 0 32px' }}>
           {message}
         </p>
@@ -70,14 +83,15 @@ export function QuizResults({ quiz, score, userAnswers, onRetry }: QuizResultsPr
       {/* Question Review */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
         <h3 style={{ fontSize: 20, fontWeight: 700, color: 'var(--np-text-primary)', margin: '0 0 8px', paddingLeft: 8 }}>
-          Review Answers
+          Question Review
         </h3>
 
         {quiz.questions.map((q, index) => {
           const userAnswerId = userAnswers[q.id];
-          const isCorrect = userAnswerId === q.answer;
+          const correctOptionId = getCorrectOptionId(q);
+          const isCorrect = userAnswerId === correctOptionId;
           const selectedOption = q.options.find(o => o.id === userAnswerId);
-          const correctOption = q.options.find(o => o.id === q.answer);
+          const correctOption = q.options.find(o => o.id === correctOptionId);
 
           return (
             <motion.div
