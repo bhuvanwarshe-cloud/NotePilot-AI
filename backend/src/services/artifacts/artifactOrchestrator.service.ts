@@ -3,6 +3,10 @@ import {
 } from '@supabase/supabase-js';
 
 import {
+  generateMindMapFromKnowledgeRepresentation,
+} from '../mindmaps/mindmap.service';
+
+import {
   updateAIJobStatus,
 } from '../aiJob.service';
 
@@ -64,6 +68,7 @@ export interface GeneratedArtifactsResult {
 
   quizQuestions: number;
 
+  mindMapId: string;
 }
 
 
@@ -198,6 +203,24 @@ const quiz =
     knowledge,
   );
 
+  // ------------------------------------------------------------------------
+// Mind Map
+// ------------------------------------------------------------------------
+
+await updateAIJobStatus(
+  supabase,
+  aiJobId,
+  'processing',
+  'mind_map_generation',
+  99,
+);
+
+const mindMap =
+  await generateMindMapFromKnowledgeRepresentation({
+    supabase,
+    lectureId,
+    knowledge,
+  });
 
     log.success(
 
@@ -223,13 +246,16 @@ const quiz =
       quiz.questions.length,
     ),
 
+    "Mind Map ID":
+  mindMap.mindMapId,
+
 }
 
     );
     
    
 
-   return {
+ return {
 
   noteId:
     notesResult.noteId,
@@ -239,6 +265,9 @@ const quiz =
 
   quizQuestions:
     quiz.questions.length,
+
+  mindMapId:
+    mindMap.mindMapId,
 
 };
 

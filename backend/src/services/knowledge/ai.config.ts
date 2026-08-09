@@ -65,6 +65,11 @@ export const aiConfig = {
 
 },
 
+mindMap: {
+  provider: process.env.MINDMAP_PROVIDER ?? "groq",
+  model: process.env.MINDMAP_MODEL ?? "llama-3.3-70b-versatile",
+},
+
   temperature:
     Number(
       process.env.AI_TEMPERATURE ??
