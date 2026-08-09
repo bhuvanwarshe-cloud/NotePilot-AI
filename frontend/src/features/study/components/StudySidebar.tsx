@@ -161,20 +161,30 @@ export function StudySidebar({
                         <CheckCircle2 size={10} /> Quiz
                       </span>
                     )}
-                    {item.hasNotes === false && !item.hasFlashcards && !item.hasQuiz && (
+                    {item.hasMindMap && (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(236, 72, 153, 0.1)', color: '#EC4899', padding: '2px 8px', borderRadius: 999, fontSize: 10, fontWeight: 600 }}>
+                        <CheckCircle2 size={10} /> Mind Map
+                      </span>
+                    )}
+                    {item.hasNotes === false && !item.hasFlashcards && !item.hasQuiz && !item.hasMindMap && (
                       <span style={{ fontSize: 10, color: 'var(--np-text-muted)', fontStyle: 'italic' }}>Generating...</span>
                     )}
                   </div>
                 </div>
                 
                 {/* Upcoming / Not generated yet */}
-                {(!item.hasQuiz || true) && (
+                {(!item.hasQuiz || !item.hasMindMap || true) && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                     <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--np-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Soon</span>
                     <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                       {!item.hasQuiz && (
                         <span style={{ display: 'flex', alignItems: 'center', gap: 3, background: 'var(--np-bg-secondary)', color: 'var(--np-text-muted)', padding: '2px 8px', borderRadius: 999, fontSize: 10, fontWeight: 500 }}>
                           <Lock size={9} /> Quiz
+                        </span>
+                      )}
+                      {!item.hasMindMap && (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 3, background: 'var(--np-bg-secondary)', color: 'var(--np-text-muted)', padding: '2px 8px', borderRadius: 999, fontSize: 10, fontWeight: 500 }}>
+                          <Lock size={9} /> Mind Map
                         </span>
                       )}
                       <span style={{ display: 'flex', alignItems: 'center', gap: 3, background: 'var(--np-bg-secondary)', color: 'var(--np-text-muted)', padding: '2px 8px', borderRadius: 999, fontSize: 10, fontWeight: 500 }}>

@@ -10,6 +10,7 @@ export interface StudyLecture {
   hasNotes?: boolean;
   hasFlashcards?: boolean;
   hasQuiz?: boolean;
+  hasMindMap?: boolean;
 }
 
 export interface StudyNote {

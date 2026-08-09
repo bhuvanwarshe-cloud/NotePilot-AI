@@ -14,6 +14,7 @@ import { UploadPage } from './pages/Upload/UploadPage';
 import { StudyWorkspacePage } from './pages/Study/StudyWorkspacePage';
 import { FlashcardsPage } from './pages/Flashcards/FlashcardsPage';
 import { QuizzesPage } from './pages/Quizzes/QuizzesPage';
+import { MindMapsPage } from './pages/MindMaps/MindMapsPage';
 
 function App() {
   return (
@@ -43,7 +44,7 @@ function App() {
               <Route path="lectures" element={<div>My Lectures Placeholder</div>} />
               <Route path="tutor" element={<div>AI Tutor Placeholder</div>} />
               <Route path="flashcards" element={<FlashcardsPage />} />
-              <Route path="mindmaps" element={<div>Mind Maps Placeholder</div>} />
+              <Route path="mindmaps" element={<MindMapsPage />} />
               <Route path="quizzes" element={<QuizzesPage />} />
               <Route path="settings" element={<div>Settings Placeholder</div>} />
             </Route>

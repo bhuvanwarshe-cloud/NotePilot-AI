@@ -24,7 +24,8 @@ export async function fetchStudyLecturesForUser(userId: string): Promise<StudyLe
       status,
       notes (id),
       flashcards (id),
-      quizzes (id)
+      quizzes (id),
+      mind_maps (id)
     `)
     .eq('user_id', userId)
     .neq('status', 'failed')
@@ -45,5 +46,6 @@ export async function fetchStudyLecturesForUser(userId: string): Promise<StudyLe
     hasNotes: Array.isArray(row.notes) && row.notes.length > 0,
     hasFlashcards: Array.isArray(row.flashcards) && row.flashcards.length > 0,
     hasQuiz: Array.isArray(row.quizzes) && row.quizzes.length > 0,
+    hasMindMap: Array.isArray(row.mind_maps) && row.mind_maps.length > 0,
   }));
 }
