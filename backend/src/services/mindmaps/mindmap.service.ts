@@ -3,6 +3,10 @@ import type {
 } from "@supabase/supabase-js";
 
 import {
+  AIProvider,
+} from "../ai/types";
+
+import {
   log,
 } from "../../utils/logger";
 
@@ -137,9 +141,23 @@ ${serializedKnowledge}
     // Provider
     // ------------------------------------------------------------------------
 
-    const provider =
-      new ProviderRouter()
-        .createProvider();
+   const provider =
+  new ProviderRouter()
+    .createProvider(
+      aiConfig.mindMap.provider as AIProvider,
+    );
+
+  log.info(
+  "MindMapService",
+  "Mind Map AI provider selected",
+  {
+    "Configured Provider":
+      aiConfig.mindMap.provider,
+
+    "Configured Model":
+      aiConfig.mindMap.model,
+  },
+);
 
     const system = [
       systemPrompt,
