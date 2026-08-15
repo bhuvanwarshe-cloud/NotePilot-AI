@@ -25,7 +25,7 @@ export abstract class AIError extends Error {
  */
 export class QuotaExceededError extends AIError {
   constructor(message = 'API quota exhausted.') {
-    super(message, true);
+    super(message, false);
   }
 }
 
@@ -43,7 +43,7 @@ export class ServiceUnavailableError extends AIError {
  */
 export class RateLimitError extends AIError {
   constructor(message = 'Rate limit exceeded.') {
-    super(message, true);
+    super(message, false);
   }
 }
 
@@ -61,7 +61,7 @@ export class ProviderTimeoutError extends AIError {
  */
 export class InvalidAPIKeyError extends AIError {
   constructor(message = 'Invalid API key.') {
-    super(message, true);
+    super(message, false);
   }
 }
 

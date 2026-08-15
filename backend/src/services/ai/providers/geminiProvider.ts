@@ -122,6 +122,16 @@ export class GeminiProvider
    *            ↓
    * All Keys Failed
    */
+  private shouldRotateKey(error: AIError): boolean {
+  return (
+    error instanceof QuotaExceededError ||
+    error instanceof RateLimitError ||
+    error instanceof InvalidAPIKeyError ||
+    error instanceof ServiceUnavailableError ||
+    error instanceof ProviderTimeoutError
+  );
+}
+
   public async generateContent(
     request: AIRequest
   ): Promise<AIResponse> {
@@ -155,11 +165,17 @@ export class GeminiProvider
 
         // If the error isn't retryable across keys,
         // immediately abort.
-        if (!(mapped instanceof AIError) || !mapped.retryable) {
+       if (mapped instanceof AIError) {
+  if (this.shouldRotateKey(mapped)) {
+    continue;
+  }
 
-          throw mapped;
+  if (!mapped.retryable) {
+    throw mapped;
+  }
+}
 
-        }
+throw mapped;
 
         // Otherwise continue with the next key.
       }
@@ -195,46 +211,36 @@ export class GeminiProvider
     const client =
       this.clientFactory.createClient(key);
 
-    const response =
-      await executeWithRetry(
-
-        async () => {
-
-          return await this.executeGeminiRequest(
-
-            client,
-
-            request,
-
-            key
-
-          );
-
-        },
-
-        DEFAULT_RETRY_OPTIONS,
-
-        (
-          attempt,
-          error,
-          delay
-        ) => {
-
-          this.logRetry(
-
-            key.index,
-
-            attempt,
-
-            delay,
-
-            error
-
-          );
-
-        }
-
+const response =
+  await executeWithRetry(
+    async () => {
+      return await this.executeGeminiRequest(
+        client,
+        request,
+        key
       );
+    },
+    {
+      ...DEFAULT_RETRY_OPTIONS,
+
+      shouldRetry: (error: Error) =>
+        error instanceof ServiceUnavailableError ||
+        error instanceof ProviderTimeoutError,
+    },
+
+    (
+      attempt,
+      error,
+      delay
+    ) => {
+      this.logRetry(
+        key.index,
+        attempt,
+        delay,
+        error
+      );
+    }
+  );
 
     return this.parseResponse(
 

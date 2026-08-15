@@ -130,29 +130,17 @@ export async function executeWithRetry<T>(
       // Non-AI errors
       // ---------------------------------------------------------
 
-      if (
+if (!(lastError instanceof AIError)) {
+  throw lastError;
+}
 
-        !(lastError instanceof AIError)
-
-      ) {
-
-        throw lastError;
-
-      }
-
-      // ---------------------------------------------------------
-      // Non-retryable AI errors
-      // ---------------------------------------------------------
-
-      if (
-
-        !lastError.retryable
-
-      ) {
-
-        throw lastError;
-
-      }
+if (options.shouldRetry) {
+  if (!options.shouldRetry(lastError)) {
+    throw lastError;
+  }
+} else if (!lastError.retryable) {
+  throw lastError;
+}
 
       // ---------------------------------------------------------
       // Retry limit reached

@@ -64,6 +64,8 @@ export interface RetryOptions {
   maxDelayMs: number;
 
   backoffMultiplier: number;
+
+  shouldRetry?: (error: Error) => boolean;
 }
 
 export interface AIProviderConfig {
